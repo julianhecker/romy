@@ -303,14 +303,15 @@
 		stop("No missing values in Y allowed.")
 	}
 	################################################
+	if(!nomissY){if(any(apply(Y, 2, function(x){sum(is.na(x))>0.05*length(x)}))){stop("Some columns of Y contain excessive missing rates (>5%).")}}
+	if(!nomissX){if(any(apply(X, 2, function(x){sum(is.na(x))>0.05*length(x)}))){stop("Some columns of X contain excessive missing rates (>5%).")}}
+	
 	## all measurements have to be non-constant
 	if(!all(apply(Y, 2, sd, na.rm=T)>0)){stop("Y contains constant columns.")}
 	if(!all(apply(X, 2, sd, na.rm=T)>0)){stop("X contains constant columns.")}
 	if(!all(apply(Z, 2, sd, na.rm=T)>0)){stop("Z contains constant columns.")}
 	
 	
-	if(!nomissY){if(any(apply(Y, 2, function(x){sum(is.na(x))>0.05*length(x)}))){stop("Some columns of Y contain excessive missing rates (>5%).")}}
-	if(!nomissX){if(any(apply(X, 2, function(x){sum(is.na(x))>0.05*length(x)}))){stop("Some columns of X contain excessive missing rates (>5%).")}}
 	################################################
 	## Split ratio and K have to be valid
 	if(!is.null(split_ratio)){
