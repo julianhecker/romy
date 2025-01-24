@@ -6,13 +6,15 @@
 \usage{
 .train_models_covar(
   Y1_1,
-  Y2_1,
-  X_1,
-  Z_1,
-  Y1_2,
   Y2_2,
+  Y1_3,
+  Y2_3,
+  X_1,
   X_2,
+  X_3,
+  Z_1,
   Z_2,
+  Z_3,
   learner_y_stage1,
   learner_y_stage2,
   learner_x,
@@ -23,19 +25,23 @@
 \arguments{
 \item{Y1_1}{Measurements for Y1_1.}
 
-\item{Y2_1}{Measurements for Y2_1.}
+\item{Y2_2}{Measurements for Y2_2.}
+
+\item{Y1_3}{Measurements for Y1_3.}
+
+\item{Y2_3}{Measurements for Y2_3.}
 
 \item{X_1}{Measurements for X_1.}
 
-\item{Z_1}{Measurements for Z_1.}
-
-\item{Y1_2}{Measurements for Y1_2.}
-
-\item{Y2_2}{Measurements for Y2_2.}
-
 \item{X_2}{Measurements for X_2.}
 
+\item{X_3}{Measurements for X_3.}
+
+\item{Z_1}{Measurements for Z_1.}
+
 \item{Z_2}{Measurements for Z_2.}
+
+\item{Z_3}{Measurements for Z_3.}
 
 \item{learner_y_stage1}{Prediction model function to learn prediction of Y given X and Z in stage 1.}
 

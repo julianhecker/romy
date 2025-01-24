@@ -24,8 +24,10 @@ learner_y=lm_learner, prediction_y=lm_predict, K=5, split_ratio=c(0.5, 0.5), par
 {
 	  ### initial checks
 	  .input_checks(Y=Y, X=X, Z=Z, split_ratio=split_ratio, num_splits=2, nomissX=TRUE, nomissY=FALSE, K=K, parallel=parallel, BPPARAM=BPPARAM)
+	  
 	  .check_model(learner=learner_ace, prediction=prediction_ace)
 	  .check_model(learner=learner_y, prediction=prediction_y)
+	  
 	  ################################################
 	  ### get dimensions
 	  N=nrow(Y)
@@ -38,6 +40,7 @@ learner_y=lm_learner, prediction_y=lm_predict, K=5, split_ratio=c(0.5, 0.5), par
 	  n_Z=ncol(Z)
 	  
 	  if(is.null(index_pairs)){ index_pairs <- expand.grid(1:n_X, 1:n_Z)}
+	  
 	  ################################################################
 	  ### scale data, missing data? 
 	  Y=scale(Y, center = TRUE, scale = FALSE) # ignores NA value
@@ -49,9 +52,11 @@ learner_y=lm_learner, prediction_y=lm_predict, K=5, split_ratio=c(0.5, 0.5), par
 	  if(is.null(colnames(Y))){
 	     colnames(Y)=paste0("Y",1:ncol(Y))
 	  }
+	  
 	  ################################################################
 	  ### get data splits
 	  splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio)
+	  
 	  ################################################################
 	  ### perform interaction testing
 	  Y_resid=.get_linear_additive_residuals(Outcome=Y, X=X, Z=Z, splits=splits,  training_part=1, learner=learner_y, prediction=prediction_y)

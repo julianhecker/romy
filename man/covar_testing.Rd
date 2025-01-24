@@ -16,7 +16,7 @@ covar_testing(
   learner_y_stage2 = lm_learner,
   prediction_y_stage2 = lm_predict,
   K = 5,
-  split_ratio = c(0.3333, 0.3333, 1 - 2 * 0.3333),
+  split_ratio = c(0.25, 0.25, 0.25, 0.25),
   parallel = FALSE,
   BPPARAM = NULL
 )

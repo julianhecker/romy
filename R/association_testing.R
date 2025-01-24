@@ -27,8 +27,10 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 {
 	  ### initial checks
 	  .input_checks(Y=Y, X=X, Z=Z, split_ratio=split_ratio, num_splits=2, nomissX=FALSE, nomissY=FALSE, K=K, parallel=parallel, BPPARAM=BPPARAM)
+	  
 	  .check_model(learner=learner_x, prediction=prediction_x)
 	  .check_model(learner=learner_y, prediction=prediction_y)
+	  
 	  if(is.null(transform_functions_x)){
 		 fun_x <- function(x) { return(x) }
 		 transform_functions_x=list()
@@ -39,6 +41,7 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 		 transform_functions_y=list()
 		 transform_functions_y[[1]]=fun_y
       }
+	  
 	  ################################################
 	  ### get dimensions
 	  N=nrow(Y)
@@ -46,6 +49,7 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 	  n_Y=ncol(Y)
 	  if(!is.null(index_pairs) & (!all(1:n_Y %in% unique(index_pairs[,2])) | (!all(1:n_X %in% unique(index_pairs[,1]))))){stop("index_pairs contains not all components of Y and X")}
 	  if(is.null(index_pairs)){ index_pairs <- expand.grid(1:n_X, 1:n_Y)}
+	  
 	  ################################################################
 	  ### scale data, missing data?
 	  
@@ -82,7 +86,6 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 	  }
 	  ###################################################################
 	  ### add ACAT if multiple tests performed, formatting
-	  
 	  
 	  colnames(results_df)[1:2] <- c("X_id", "Y_id")
 	  

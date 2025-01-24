@@ -265,7 +265,42 @@
 }
 
 
-
+#' K-fold with 4 training splits
+#'
+#' This function creates a partitioning of the samples for K-fold cross fitting, using 4 sets for training.
+#'
+#' @param K Number of folds.
+#' @param N Overall sample size.
+#' @param split_ratio Fractions describing the allocation of training data for different training tasks.
+#'
+.create_splits_4subs=function(K, N, split_ratio)
+{
+	  inds=1:N
+	  indices=list()
+	  if(K>=2)
+	  {
+		  folds=sample(cut(seq(1,N), breaks=K, labels=FALSE))
+		 
+		  for(k in 1:K)
+		  {
+			tmp=inds[folds==k] # test data
+			tmpc=inds[folds!=k] # training data
+			splits=sample(1:4, size=length(tmpc), replace=TRUE, prob=split_ratio)
+			inds_train=list()
+			inds_train[[1]]=tmpc[splits==1];inds_train[[2]]=tmpc[splits==2];inds_train[[3]]=tmpc[splits==3];inds_train[[4]]=tmpc[splits==4]
+			tmp=list(inds_train=inds_train, inds_test=tmp) # split training data
+			indices[[k]]=tmp
+		  }
+	  }
+	  if(K==1) # test data = training data = whole sample
+	  {
+		  inds_train=list()
+		  inds_train[[1]]=inds;inds_train[[2]]=inds;inds_train[[3]]=inds;inds_train[[4]]=inds
+		  tmp=list(inds_train=inds_train,inds_test=inds)
+		  indices[[1]]=tmp
+	  }
+	  return(indices)
+}
 
 
 #' Input check

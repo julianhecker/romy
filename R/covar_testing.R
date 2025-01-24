@@ -31,13 +31,15 @@ NULL
 #' @export
 covar_testing=function(Y, X, Z, index_triples=NULL,
 learner_x=lm_learner, prediction_x=lm_predict, learner_y_stage1=lm_learner, prediction_y_stage1=lm_predict, 
-learner_y_stage2=lm_learner, prediction_y_stage2=lm_predict, K=5, split_ratio=c(0.3333,0.3333,1-2*0.3333), parallel=FALSE, BPPARAM=NULL)
+learner_y_stage2=lm_learner, prediction_y_stage2=lm_predict, K=5, split_ratio=c(0.25, 0.25, 0.25, 0.25), parallel=FALSE, BPPARAM=NULL)
 {
 	### initial checks
-	.input_checks(Y=Y, X=X, Z=Z, split_ratio=split_ratio, num_splits=3, nomissX=TRUE, nomissY=FALSE, K=K, parallel=parallel, BPPARAM=BPPARAM)
+	.input_checks(Y=Y, X=X, Z=Z, split_ratio=split_ratio, num_splits=4, nomissX=TRUE, nomissY=FALSE, K=K, parallel=parallel, BPPARAM=BPPARAM)
+	
 	.check_model(learner=learner_x, prediction=prediction_x)
 	.check_model(learner=learner_y_stage1, prediction=prediction_y_stage1)
 	.check_model(learner=learner_y_stage2, prediction=prediction_y_stage2)
+	
 	################################################
 	### get dimensions
 	N=nrow(Y)
@@ -49,6 +51,7 @@ learner_y_stage2=lm_learner, prediction_y_stage2=lm_predict, K=5, split_ratio=c(
 		index_triples_sorted[, 2:3] <- t(apply(index_triples_sorted[, 2:3], 1, sort))
 		index_triples <- index_triples_sorted[!duplicated(index_triples_sorted), ]
 	}
+	
 	################################################################
 	### scale data, missing data? 
 	Y=scale(Y, center=TRUE, scale = FALSE)
@@ -60,9 +63,10 @@ learner_y_stage2=lm_learner, prediction_y_stage2=lm_predict, K=5, split_ratio=c(
 	if(is.null(colnames(Y))){
 	     colnames(Y)=paste0("Y",1:ncol(Y))
 	}
+	
 	################################################################
 	### get data splits
-    splits=.create_splits_3subs(K=K, N=N, split_ratio=split_ratio)
+    splits=.create_splits_4subs(K=K, N=N, split_ratio=split_ratio)
 	
     ################################################################
 	### compute residuals
@@ -72,6 +76,7 @@ learner_y_stage2=lm_learner, prediction_y_stage2=lm_predict, K=5, split_ratio=c(
 	if(parallel){
 		Xrs=.get_residuals_parallel(Outcome=X, Z=Z, splits=splits, BPPARAM=BPPARAM, training_part=1, learner=learner_x, prediction=prediction_x)
 	}
+	
     ################################################################
 	### perform double machine learning (co)variance testing
 	if(!parallel){
@@ -84,6 +89,7 @@ learner_y_stage2=lm_learner, prediction_y_stage2=lm_predict, K=5, split_ratio=c(
 		learner_x=learner_x, prediction_x=prediction_x, learner_y_stage1=learner_y_stage1, learner_y_stage2=learner_y_stage2, 
 		prediction_y_stage1=prediction_y_stage1, prediction_y_stage2=prediction_y_stage2)
 	}
+	
     ###################################################################
 	### formatting results
     colnames(results_df)[1:3] <- c("X_id", "Y_id1", "Y_id2")
@@ -126,22 +132,25 @@ prediction_x, learner_y_stage1, learner_y_stage2, prediction_y_stage1, predictio
 			
 			for(k in 1:K){
 				
-				inds_train2=splits[[k]]$inds_train[[2]]
-				inds_train3=splits[[k]]$inds_train[[3]]
+				inds_train1=splits[[k]]$inds_train[[2]]
+				inds_train2=splits[[k]]$inds_train[[3]]
+				inds_train3=splits[[k]]$inds_train[[4]]
 				inds_test=splits[[k]]$inds_test
 				
-				Y1_1=Y[inds_train2,j1]; Y2_1=Y[inds_train2,j2]
-				Y1_2=Y[inds_train3,j1]; Y2_2=Y[inds_train3,j2]
+				Y1_1=Y[inds_train1,j1]; 
+				Y2_2=Y[inds_train2,j2]
+				Y1_3=Y[inds_train3,j1]; Y2_3=Y[inds_train3,j2]
 				
-				X_1=X[inds_train2,i];
-				X_2=X[inds_train3,i];
+				X_1=X[inds_train1,i];
+				X_2=X[inds_train2,i];
+				X_3=X[inds_train3,i];
+				
+				Z_1=Z[inds_train1,];
+				Z_2=Z[inds_train2,];
+				Z_3=Z[inds_train3,];
 				
 				
-				Z_1=Z[inds_train2,];
-				Z_2=Z[inds_train3,];
-				
-				
-				train=.train_models_covar(Y1_1=Y1_1, Y2_1=Y2_1, X_1=X_1, Z_1=Z_1, Y1_2=Y1_2, Y2_2=Y2_2, X_2=X_2, Z_2=Z_2, 
+				train=.train_models_covar(Y1_1=Y1_1, Y2_2=Y2_2, Y1_3=Y1_3, Y2_3=Y2_3, X_1=X_1, X_2=X_2, X_3=X_3, Z_1=Z_1, Z_2=Z_2, Z_3=Z_3,
 				learner_y_stage1=learner_y_stage1, learner_y_stage2=learner_y_stage2, 
 				learner_x=learner_x, prediction_y_stage1=prediction_y_stage1, variance=j1==j2)
 				
@@ -195,22 +204,25 @@ prediction_x, learner_y_stage1, learner_y_stage2, prediction_y_stage1, predictio
 			
 			for(k in 1:K){
 				
-				inds_train2=splits[[k]]$inds_train[[2]]
-				inds_train3=splits[[k]]$inds_train[[3]]
+				inds_train1=splits[[k]]$inds_train[[2]]
+				inds_train2=splits[[k]]$inds_train[[3]]
+				inds_train3=splits[[k]]$inds_train[[4]]
 				inds_test=splits[[k]]$inds_test
 				
-				Y1_1=Y[inds_train2,j1]; Y2_1=Y[inds_train2,j2]
-				Y1_2=Y[inds_train3,j1]; Y2_2=Y[inds_train3,j2]
+				Y1_1=Y[inds_train1,j1]; 
+				Y2_2=Y[inds_train2,j2]
+				Y1_3=Y[inds_train3,j1]; Y2_3=Y[inds_train3,j2]
 				
-				X_1=X[inds_train2,i];
-				X_2=X[inds_train3,i];
+				X_1=X[inds_train1,i];
+				X_2=X[inds_train2,i];
+				X_3=X[inds_train3,i];
+				
+				Z_1=Z[inds_train1,];
+				Z_2=Z[inds_train2,];
+				Z_3=Z[inds_train3,];
 				
 				
-				Z_1=Z[inds_train2,];
-				Z_2=Z[inds_train3,];
-				
-				
-				train=.train_models_covar(Y1_1=Y1_1, Y2_1=Y2_1, X_1=X_1, Z_1=Z_1, Y1_2=Y1_2, Y2_2=Y2_2, X_2=X_2, Z_2=Z_2, 
+				train=.train_models_covar(Y1_1=Y1_1, Y2_2=Y2_2, Y1_3=Y1_3, Y2_3=Y2_3, X_1=X_1, X_2=X_2, X_3=X_3, Z_1=Z_1, Z_2=Z_2, Z_3=Z_3,
 				learner_y_stage1=learner_y_stage1, learner_y_stage2=learner_y_stage2, 
 				learner_x=learner_x, prediction_y_stage1=prediction_y_stage1, variance=j1==j2)
 				
@@ -248,13 +260,15 @@ prediction_x, learner_y_stage1, learner_y_stage2, prediction_y_stage1, predictio
 #' This function performs the training for (co)variance testing.
 #'
 #' @param Y1_1 Measurements for Y1_1.
-#' @param Y2_1 Measurements for Y2_1.
-#' @param X_1 Measurements for X_1.
-#' @param Z_1 Measurements for Z_1.
-#' @param Y1_2 Measurements for Y1_2.
 #' @param Y2_2 Measurements for Y2_2.
+#' @param Y1_3 Measurements for Y1_3.
+#' @param Y2_3 Measurements for Y2_3.
+#' @param X_1 Measurements for X_1.
 #' @param X_2 Measurements for X_2.
+#' @param X_3 Measurements for X_3.
+#' @param Z_1 Measurements for Z_1.
 #' @param Z_2 Measurements for Z_2.
+#' @param Z_3 Measurements for Z_3.
 #' @param learner_y_stage1 Prediction model function to learn prediction of Y given X and Z in stage 1. 
 #' @param learner_y_stage2 Prediction model function to learn prediction of Y given X and Z in stage 2.
 #' @param learner_x Prediction model function to learn prediction of X given Z.
@@ -262,25 +276,25 @@ prediction_x, learner_y_stage1, learner_y_stage2, prediction_y_stage1, predictio
 #' @param variance Logical variable to indicate if Y1=Y2. 
 #'
 #'
-.train_models_covar=function(Y1_1, Y2_1, X_1, Z_1, Y1_2, Y2_2, X_2, Z_2, 
+.train_models_covar=function(Y1_1, Y2_2, Y1_3, Y2_3, X_1, X_2, X_3, Z_1, Z_2, Z_3,
 learner_y_stage1, learner_y_stage2, learner_x, prediction_y_stage1, variance=FALSE)
 {
   
 	  data_XZ1=data.frame(X=X_1, Z=Z_1)
 	  data_XZ2=data.frame(X=X_2, Z=Z_2)
-	  data_Z2=data.frame(Z=Z_2)
+	  data_XZ3=data.frame(X=X_3, Z=Z_3)
+	  data_Z3=data.frame(Z=Z_3)
 	  
 	  colnames(data_XZ1)=c(paste0("X",1),paste0("Z",1:ncol(Z_1)))
 	  colnames(data_XZ2)=c(paste0("X",1),paste0("Z",1:ncol(Z_2)))
-	  colnames(data_Z2)=paste0("Z",1:ncol(Z_2))
+	  colnames(data_Z3)=paste0("Z",1:ncol(Z_3))
 	  
 	  fit1=learner_y_stage1(Y1_1, data_XZ1)
-	  fit2=fit1
-	  if(!variance){ fit2=learner_y_stage1(Y2_1, data_XZ1)}
+	  fit2=learner_y_stage1(Y2_2, data_XZ2)
 	  
-	  tmp=(Y1_2-prediction_y_stage1(fit1, data_XZ2))*(Y2_2-prediction_y_stage1(fit2, data_XZ2))
+	  tmp=(Y1_3-prediction_y_stage1(fit1, data_XZ3))*(Y2_3-prediction_y_stage1(fit2, data_XZ3))
 	  
-	  fit=learner_y_stage2(tmp, data=data_Z2)
+	  fit=learner_y_stage2(tmp, data=data_Z3)
 	  
 	  
 	  return(list(fit1=fit1, fit2=fit2, fit=fit))
@@ -311,5 +325,5 @@ learner_y_stage1, learner_y_stage2, learner_x, prediction_y_stage1, variance=FAL
 	  
 	  res_yy=res_y1*res_y2-prediction_y_stage2(model_data$fit, data_Z)
 	  
-	  return(list(res_y1=res_y1,res_y2=res_y2,res_yy=res_yy))
+	  return(list(res_y1=res_y1, res_y2=res_y2, res_yy=res_yy))
 }
