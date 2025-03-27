@@ -150,46 +150,36 @@
 	  return(Residuals)
 }
 
-
-
-
-
-
-
-#' K-fold with 1 training part
+#' no-cross-fitting-approach
 #'
-#' This function creates a partitioning of the samples for K-fold cross fitting, using 1 set for training.
+#' This function sets up the data such that evaluation and training data is the same.
 #'
-#' @param K Number of folds.
 #' @param N Overall sample size.
+#' @param subs Number of sub-splits
 #'
-.create_splits_1sub=function(K, N){
-
-	  indices=list()
-	  inds=1:N
-	  if(K>=2)
-	  { 
-		  folds=sample(cut(seq(1,N), breaks=K, labels=FALSE))
-		  for(k in 1:K)
-		  {
-			tmp=inds[folds==k] # test data
-			tmpc=inds[folds!=k] # training data
-			
-			inds_train=list()
-			inds_train[[1]]=tmpc
-			tmp=list(inds_train=inds_train, inds_test=tmp)
-			indices[[k]]=tmp
-		  }
-	  }
-	  if(K==1) # test data = training data = whole sample
-	  {
-	      inds_train=list()
-		  inds_train[[1]]=inds
-		  tmp=list(inds_train=inds_train, inds_test=inds)
-		  indices[[1]]=tmp
-	  }
-	  return(indices)
+.create_no_split_data=function(N, subs)
+{
+	indices=list()
+	inds=1:N
+	inds_train=list()
+	if(subs==2)
+	{
+		inds_train[[1]]=inds;inds_train[[2]]=inds;
+	}
+	if(subs==3)
+	{
+		inds_train[[1]]=inds;inds_train[[2]]=inds;inds_train[[3]]=inds;
+	}
+	if(subs==4)
+	{
+		inds_train[[1]]=inds;inds_train[[2]]=inds;inds_train[[3]]=inds;inds_train[[4]]=inds;
+	}
+	tmp=list(inds_train=inds_train,inds_test=inds)
+	indices[[1]]=tmp
+	return(indices)
 }
+
+
 
 #' K-fold with 2 training splits
 #'
@@ -198,31 +188,39 @@
 #' @param K Number of folds.
 #' @param N Overall sample size.
 #' @param split_ratio Fractions describing the allocation of training data for different training tasks.
+#' @param single Boolean controlling single split or double splits. Default is FALSE.
 #'
-.create_splits_2subs=function(K, N, split_ratio){
+.create_splits_2subs=function(K, N, split_ratio, single=FALSE){
 
 	  indices=list()
 	  inds=1:N
-	  if(K>=2)
-	  { 
-		  folds=sample(cut(seq(1,N), breaks=K, labels=FALSE))
+	  
+	  folds=sample(cut(seq(1,N), breaks=K, labels=FALSE))
+	  if(!single)
+	  {
 		  for(k in 1:K)
 		  {
-			tmp=inds[folds==k] # test data
-			tmpc=inds[folds!=k] # training data
-			splits=sample(1:2, size=length(tmpc), replace=TRUE, prob=split_ratio) # split training data
-			inds_train=list()
-			inds_train[[1]]=tmpc[splits==1];inds_train[[2]]=tmpc[splits==2]
-			tmp=list(inds_train=inds_train, inds_test=tmp)
-			indices[[k]]=tmp
+				tmp=inds[folds==k] # test data
+				tmpc=inds[folds!=k] # training data
+				splits=sample(1:2, size=length(tmpc), replace=TRUE, prob=split_ratio) # split training data
+				inds_train=list()
+				inds_train[[1]]=tmpc[splits==1];inds_train[[2]]=tmpc[splits==2]
+				tmp=list(inds_train=inds_train, inds_test=tmp)
+				indices[[k]]=tmp
 		  }
 	  }
-	  if(K==1) # test data = training data = whole sample
+	  if(single)
 	  {
-	      inds_train=list()
-		  inds_train[[1]]=inds; inds_train[[2]]=inds
-		  tmp=list(inds_train=inds_train, inds_test=inds)
-		  indices[[1]]=tmp
+			for(k in 1:K)
+			{
+					tmp=inds[folds==k] # test data
+					tmpc=inds[folds!=k] # training data
+					
+					inds_train=list()
+					inds_train[[1]]=tmpc;inds_train[[2]]=tmpc;
+					tmp=list(inds_train=inds_train, inds_test=tmp)
+					indices[[k]]=tmp
+			}
 	  }
 	  return(indices)
 }
@@ -234,33 +232,41 @@
 #' @param K Number of folds.
 #' @param N Overall sample size.
 #' @param split_ratio Fractions describing the allocation of training data for different training tasks.
+#' @param single Boolean controlling single split or double splits. Default is FALSE.
 #'
-.create_splits_3subs=function(K, N, split_ratio)
+.create_splits_3subs=function(K, N, split_ratio, single=FALSE)
 {
 	  inds=1:N
 	  indices=list()
-	  if(K>=2)
+	  
+	  folds=sample(cut(seq(1,N), breaks=K, labels=FALSE))
+		
+      if(!single)
 	  {
-		  folds=sample(cut(seq(1,N), breaks=K, labels=FALSE))
-		 
 		  for(k in 1:K)
 		  {
-			tmp=inds[folds==k] # test data
-			tmpc=inds[folds!=k] # training data
-			splits=sample(1:3, size=length(tmpc), replace=TRUE, prob=split_ratio)
-			inds_train=list()
-			inds_train[[1]]=tmpc[splits==1];inds_train[[2]]=tmpc[splits==2];inds_train[[3]]=tmpc[splits==3]
-			tmp=list(inds_train=inds_train, inds_test=tmp) # split training data
-			indices[[k]]=tmp
+				tmp=inds[folds==k] # test data
+				tmpc=inds[folds!=k] # training data
+				splits=sample(1:3, size=length(tmpc), replace=TRUE, prob=split_ratio)
+				inds_train=list()
+				inds_train[[1]]=tmpc[splits==1];inds_train[[2]]=tmpc[splits==2];inds_train[[3]]=tmpc[splits==3]
+				tmp=list(inds_train=inds_train, inds_test=tmp) # split training data
+				indices[[k]]=tmp
 		  }
 	  }
-	  if(K==1) # test data = training data = whole sample
+	  if(single)
 	  {
-		  inds_train=list()
-		  inds_train[[1]]=inds;inds_train[[2]]=inds;inds_train[[3]]=inds
-		  tmp=list(inds_train=inds_train,inds_test=inds)
-		  indices[[1]]=tmp
+		   for(k in 1:K)
+		   {
+				tmp=inds[folds==k] # test data
+				tmpc=inds[folds!=k] # training data
+				inds_train=list()
+				inds_train[[1]]=tmpc;inds_train[[2]]=tmpc;inds_train[[3]]=tmpc;
+				tmp=list(inds_train=inds_train, inds_test=tmp) # split training data
+				indices[[k]]=tmp
+		   }
 	  }
+	 
 	  return(indices)
 }
 
@@ -272,32 +278,40 @@
 #' @param K Number of folds.
 #' @param N Overall sample size.
 #' @param split_ratio Fractions describing the allocation of training data for different training tasks.
+#' @param single Boolean controlling single split or double splits. Default is FALSE.
 #'
-.create_splits_4subs=function(K, N, split_ratio)
+.create_splits_4subs=function(K, N, split_ratio, single=FALSE)
 {
 	  inds=1:N
 	  indices=list()
-	  if(K>=2)
-	  {
-		  folds=sample(cut(seq(1,N), breaks=K, labels=FALSE))
-		 
+	  
+	  folds=sample(cut(seq(1,N), breaks=K, labels=FALSE))
+		
+      if(!single)
+	  {	  
 		  for(k in 1:K)
 		  {
-			tmp=inds[folds==k] # test data
-			tmpc=inds[folds!=k] # training data
-			splits=sample(1:4, size=length(tmpc), replace=TRUE, prob=split_ratio)
-			inds_train=list()
-			inds_train[[1]]=tmpc[splits==1];inds_train[[2]]=tmpc[splits==2];inds_train[[3]]=tmpc[splits==3];inds_train[[4]]=tmpc[splits==4]
-			tmp=list(inds_train=inds_train, inds_test=tmp) # split training data
-			indices[[k]]=tmp
+				tmp=inds[folds==k] # test data
+				tmpc=inds[folds!=k] # training data
+				splits=sample(1:4, size=length(tmpc), replace=TRUE, prob=split_ratio)
+				inds_train=list()
+				inds_train[[1]]=tmpc[splits==1];inds_train[[2]]=tmpc[splits==2];inds_train[[3]]=tmpc[splits==3];inds_train[[4]]=tmpc[splits==4]
+				tmp=list(inds_train=inds_train, inds_test=tmp) # split training data
+				indices[[k]]=tmp
 		  }
 	  }
-	  if(K==1) # test data = training data = whole sample
+	  if(single)
 	  {
-		  inds_train=list()
-		  inds_train[[1]]=inds;inds_train[[2]]=inds;inds_train[[3]]=inds;inds_train[[4]]=inds
-		  tmp=list(inds_train=inds_train,inds_test=inds)
-		  indices[[1]]=tmp
+		  for(k in 1:K)
+		  {
+				tmp=inds[folds==k] # test data
+				tmpc=inds[folds!=k] # training data
+				
+				inds_train=list()
+				inds_train[[1]]=tmpc;inds_train[[2]]=tmpc;inds_train[[3]]=tmpc;inds_train[[4]]=tmpc;
+				tmp=list(inds_train=inds_train, inds_test=tmp) # split training data
+				indices[[k]]=tmp
+		  }
 	  }
 	  return(indices)
 }
@@ -310,15 +324,12 @@
 #' @param Y Matrix Y.
 #' @param X Matrix X.
 #' @param Z Matrix Z.
-#' @param split_ratio Split ratio for training.
-#' @param num_splits Length of split ratio vector.
 #' @param nomissX Logic value if missing values in X should be allowed.
 #' @param nomissY Logic value if missing values in Y should be allowed.
-#' @param K K value for cross-fitting.
 #' @param parallel Logic value to indicate if parallel computing should be used.
 #' @param BPPARAM BPPARAM object for BiocParallel parallel computation.
 #'
-.input_checks=function(Y, X, Z, split_ratio, num_splits, nomissX, nomissY, K, parallel, BPPARAM){
+.input_checks=function(Y, X, Z, nomissX, nomissY, parallel, BPPARAM){
 
 	###############################################
 	## Y, X, and Z need to be matrices
@@ -347,16 +358,6 @@
 	if(!all(apply(Z, 2, sd, na.rm=T)>0)){stop("Z contains constant columns.")}
 	
 	
-	################################################
-	## Split ratio and K have to be valid
-	if(!is.null(split_ratio)){
-		if(any(split_ratio<0)){stop("split_ratio contains negative values.")}
-		if(!(sum(split_ratio)==1)){
-			stop("split_ratio doest not sum to 1.")
-		}
-		##
-		if(!(K==1 | (K>1 & length(split_ratio)==num_splits))){stop("K or split_ratio not correctly specified.")}
-	}
 	################################################
 	## Parallel computing objects
 	if(parallel & is.null(BPPARAM)){

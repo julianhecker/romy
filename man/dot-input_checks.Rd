@@ -4,18 +4,7 @@
 \alias{.input_checks}
 \title{Input check}
 \usage{
-.input_checks(
-  Y,
-  X,
-  Z,
-  split_ratio,
-  num_splits,
-  nomissX,
-  nomissY,
-  K,
-  parallel,
-  BPPARAM
-)
+.input_checks(Y, X, Z, nomissX, nomissY, parallel, BPPARAM)
 }
 \arguments{
 \item{Y}{Matrix Y.}
@@ -24,15 +13,9 @@
 
 \item{Z}{Matrix Z.}
 
-\item{split_ratio}{Split ratio for training.}
-
-\item{num_splits}{Length of split ratio vector.}
-
 \item{nomissX}{Logic value if missing values in X should be allowed.}
 
 \item{nomissY}{Logic value if missing values in Y should be allowed.}
-
-\item{K}{K value for cross-fitting.}
 
 \item{parallel}{Logic value to indicate if parallel computing should be used.}
 

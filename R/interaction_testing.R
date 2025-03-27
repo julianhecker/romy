@@ -11,6 +11,7 @@
 #' @param prediction_ace Prediction model to predict in the ACE algorithm. Defaul is linear regression.
 #' @param learner_y Prediction model function to learn prediction of Y given X and Z (without interactions). Defaul is linear regression.
 #' @param prediction_y Prediction model to predict Y given X and Z. Defaul is linear regression.
+#' @param method Method for controlling cross-fitting. Options are 'double_cf', 'single_cf', or 'no_split'. Default is 'double_cf'.
 #' @param K Value for K for the K fold cross fitting. Default is K=5.
 #' @param split_ratio Ratio for splitting of training data for the two prediction tasks. Default is 0.5:0.5.
 #' @param parallel Logic value indicating if parallel computation should be used. Default is FALSE. If TRUE, BPPARAM needs to be initialized
@@ -20,10 +21,10 @@
 #'
 #' @export
 interaction_testing=function(Y, X, Z, index_pairs=NULL, learner_ace=lm_learner_simple, prediction_ace=lm_predict_simple, 
-learner_y=lm_learner, prediction_y=lm_predict, K=5, split_ratio=c(0.5, 0.5), parallel=FALSE, BPPARAM=NULL)
+learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ratio=c(0.5, 0.5), parallel=FALSE, BPPARAM=NULL)
 {
 	  ### initial checks
-	  .input_checks(Y=Y, X=X, Z=Z, split_ratio=split_ratio, num_splits=2, nomissX=TRUE, nomissY=FALSE, K=K, parallel=parallel, BPPARAM=BPPARAM)
+	  .input_checks(Y=Y, X=X, Z=Z, nomissX=TRUE, nomissY=FALSE, parallel=parallel, BPPARAM=BPPARAM)
 	  
 	  .check_model(learner=learner_ace, prediction=prediction_ace)
 	  .check_model(learner=learner_y, prediction=prediction_y)
@@ -55,16 +56,28 @@ learner_y=lm_learner, prediction_y=lm_predict, K=5, split_ratio=c(0.5, 0.5), par
 	  
 	  ################################################################
 	  ### get data splits
-	  splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio)
 	  
+	  if(method=="double_cf")
+	  {
+		splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio)
+	  }
+	  if(method=="single_cf")
+	  {
+		splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio, single=TRUE)
+	  }
+	  if(method=="no_split")
+	  {
+		splits=.create_no_split_data(N=N, subs=2)
+	  }
 	  ################################################################
 	  ### perform interaction testing
-	  Y_resid=.get_linear_additive_residuals(Outcome=Y, X=X, Z=Z, splits=splits,  training_part=1, learner=learner_y, prediction=prediction_y)
+	  
 	  
 	  if(!parallel){
 		  results <- apply(index_pairs, 1, function(idx){
 				i <- idx[1]
 				j <- idx[2]
+				Y_resid=.get_linear_additive_residuals(Outcome=Y, X=as.matrix(X[,i]), Z=Z, splits=splits,  training_part=1, learner=learner_y, prediction=prediction_y)
 				interaction_term=X[,i]*Z[,j]
 				interaction_variable_resid=.ace(interaction_term=interaction_term, X=X, Z=Z, splits, training_part=2, learner=learner_ace,
 				prediction=prediction_ace)
@@ -82,6 +95,7 @@ learner_y=lm_learner, prediction_y=lm_predict, K=5, split_ratio=c(0.5, 0.5), par
 		  compute_results=function(id){
 				i <- index_pairs[id,1]
 				j <- index_pairs[id,2]
+				Y_resid=.get_linear_additive_residuals(Outcome=Y, X=as.matrix(X[,i]), Z=Z, splits=splits,  training_part=1, learner=learner_y, prediction=prediction_y)
 				interaction_term=X[,i]*Z[,j]
 				interaction_variable_resid=.ace(interaction_term=interaction_term, X=X, Z=Z, splits, training_part=2, learner=learner_ace,
 				prediction=prediction_ace)

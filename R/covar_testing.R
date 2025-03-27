@@ -21,6 +21,7 @@ NULL
 #' @param prediction_y_stage1 Prediction model to predict Y given X and Z in stage 1. Defaul is linear regression.
 #' @param learner_y_stage2 Prediction model function to learn prediction of Y in stage 2. Defaul is linear regression.
 #' @param prediction_y_stage2 Prediction model to predict Y in stage 2. Defaul is linear regression.
+#' @param method Method for controlling cross-fitting. Options are 'double_cf', 'single_cf, or 'no_split'. Default is 'double_cf'.
 #' @param K Value for K for the K fold cross fitting. Default is K=5.
 #' @param split_ratio Ratio for splitting of training data for the two prediction tasks. Default is 0.3333/0.3333/0.3333.
 #' @param parallel Logic value indicating if parallel computation should be used. Default is FALSE. If TRUE, BPPARAM needs to be initialized
@@ -31,15 +32,19 @@ NULL
 #' @export
 covar_testing=function(Y, X, Z, index_triples=NULL,
 learner_x=lm_learner, prediction_x=lm_predict, learner_y_stage1=lm_learner, prediction_y_stage1=lm_predict, 
-learner_y_stage2=lm_learner, prediction_y_stage2=lm_predict, K=5, split_ratio=c(0.25, 0.25, 0.25, 0.25), parallel=FALSE, BPPARAM=NULL)
+learner_y_stage2=lm_learner, prediction_y_stage2=lm_predict, method="double_cf", K=5, split_ratio=c(0.25, 0.25, 0.25, 0.25), parallel=FALSE, BPPARAM=NULL)
 {
 	### initial checks
-	.input_checks(Y=Y, X=X, Z=Z, split_ratio=split_ratio, num_splits=4, nomissX=TRUE, nomissY=FALSE, K=K, parallel=parallel, BPPARAM=BPPARAM)
+	.input_checks(Y=Y, X=X, Z=Z, nomissX=TRUE, nomissY=FALSE, parallel=parallel, BPPARAM=BPPARAM)
 	
 	.check_model(learner=learner_x, prediction=prediction_x)
 	.check_model(learner=learner_y_stage1, prediction=prediction_y_stage1)
 	.check_model(learner=learner_y_stage2, prediction=prediction_y_stage2)
 	
+	if(!(method %in% c("double_cf","single_cf","no_split")))
+	{
+		 stop("method unknown.")
+	}
 	################################################
 	### get dimensions
 	N=nrow(Y)
@@ -66,8 +71,19 @@ learner_y_stage2=lm_learner, prediction_y_stage2=lm_predict, K=5, split_ratio=c(
 	
 	################################################################
 	### get data splits
-    splits=.create_splits_4subs(K=K, N=N, split_ratio=split_ratio)
-	
+    
+	if(method=="double_cf")
+	{
+		splits=.create_splits_4subs(K=K, N=N, split_ratio=split_ratio)
+	}
+	if(method=="single_cf")
+	{
+		splits=.create_splits_4subs(K=K, N=N, split_ratio=split_ratio, single=TRUE)
+	}
+	if(method=="no_split")
+	{
+		splits=.create_no_split_data(N=N, subs=4)
+	}
     ################################################################
 	### compute residuals
 	if(!parallel){

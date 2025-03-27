@@ -13,6 +13,7 @@ interaction_testing(
   prediction_ace = lm_predict_simple,
   learner_y = lm_learner,
   prediction_y = lm_predict,
+  method = "double_cf",
   K = 5,
   split_ratio = c(0.5, 0.5),
   parallel = FALSE,
@@ -35,6 +36,8 @@ interaction_testing(
 \item{learner_y}{Prediction model function to learn prediction of Y given X and Z (without interactions). Defaul is linear regression.}
 
 \item{prediction_y}{Prediction model to predict Y given X and Z. Defaul is linear regression.}
+
+\item{method}{Method for controlling cross-fitting. Options are 'double_cf', 'single_cf', or 'no_split'. Default is 'double_cf'.}
 
 \item{K}{Value for K for the K fold cross fitting. Default is K=5.}
 

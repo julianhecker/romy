@@ -15,6 +15,7 @@ covar_testing(
   prediction_y_stage1 = lm_predict,
   learner_y_stage2 = lm_learner,
   prediction_y_stage2 = lm_predict,
+  method = "double_cf",
   K = 5,
   split_ratio = c(0.25, 0.25, 0.25, 0.25),
   parallel = FALSE,
@@ -41,6 +42,8 @@ covar_testing(
 \item{learner_y_stage2}{Prediction model function to learn prediction of Y in stage 2. Defaul is linear regression.}
 
 \item{prediction_y_stage2}{Prediction model to predict Y in stage 2. Defaul is linear regression.}
+
+\item{method}{Method for controlling cross-fitting. Options are 'double_cf', 'single_cf, or 'no_split'. Default is 'double_cf'.}
 
 \item{K}{Value for K for the K fold cross fitting. Default is K=5.}
 

@@ -11,7 +11,7 @@ test_that("check_association_testing", {
   
   expect_false(any(is.na(at)))
   
-  at=association_testing(Y, X, Z, K=1)
+  at=association_testing(Y, X, Z, method='no_split', K=1)
   
   expect_false(any(is.na(at)))
 

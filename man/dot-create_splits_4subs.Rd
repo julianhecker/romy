@@ -4,7 +4,7 @@
 \alias{.create_splits_4subs}
 \title{K-fold with 4 training splits}
 \usage{
-.create_splits_4subs(K, N, split_ratio)
+.create_splits_4subs(K, N, split_ratio, single = FALSE)
 }
 \arguments{
 \item{K}{Number of folds.}
@@ -12,6 +12,8 @@
 \item{N}{Overall sample size.}
 
 \item{split_ratio}{Fractions describing the allocation of training data for different training tasks.}
+
+\item{single}{Boolean controlling single split or double splits. Default is FALSE.}
 }
 \description{
 This function creates a partitioning of the samples for K-fold cross fitting, using 4 sets for training.

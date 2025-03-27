@@ -10,11 +10,11 @@ association_testing(
   Z,
   index_pairs = NULL,
   transform_functions_x = NULL,
-  transform_functions_y = NULL,
   learner_x = lm_learner,
   prediction_x = lm_predict,
   learner_y = lm_learner,
   prediction_y = lm_predict,
+  method = "double_cf",
   K = 5,
   split_ratio = c(0.5, 0.5),
   parallel = FALSE,
@@ -32,8 +32,6 @@ association_testing(
 
 \item{transform_functions_x}{List of functions to transform the measurements for X. All transformations will be considered in testing.}
 
-\item{transform_functions_y}{List of functions to transform the measurements for Y. All transformations will be considered in testing.}
-
 \item{learner_x}{Prediction model function to learn prediction of X given Z. Defaul is linear regression.}
 
 \item{prediction_x}{Prediction model to predict X given Z. Default is linear regression.}
@@ -41,6 +39,8 @@ association_testing(
 \item{learner_y}{Prediction model function to learn prediction of Y given Z. Default is linear regression.}
 
 \item{prediction_y}{Prediction model to predict Y given Z. Default is linear regression.}
+
+\item{method}{Method for controlling cross-fitting. Options are 'double_cf', 'single_cf', or 'no_split'. Default is 'double_cf'.}
 
 \item{K}{Value for K for the K fold cross fitting. Default is K=5.}
 

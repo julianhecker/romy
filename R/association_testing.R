@@ -7,11 +7,11 @@
 #' @param Z A matrix containing the measurements for Z. No missing values allowed.
 #' @param index_pairs A dataframe with two columns containing the pairs of indices in X and Y to be tested, respectively. Default is NULL, leading to testing all possible pairs.
 #' @param transform_functions_x List of functions to transform the measurements for X. All transformations will be considered in testing.
-#' @param transform_functions_y List of functions to transform the measurements for Y. All transformations will be considered in testing.
 #' @param learner_x Prediction model function to learn prediction of X given Z. Defaul is linear regression.
 #' @param prediction_x Prediction model to predict X given Z. Default is linear regression.
 #' @param learner_y Prediction model function to learn prediction of Y given Z. Default is linear regression.
 #' @param prediction_y Prediction model to predict Y given Z. Default is linear regression.
+#' @param method Method for controlling cross-fitting. Options are 'double_cf', 'single_cf', or 'no_split'. Default is 'double_cf'.
 #' @param K Value for K for the K fold cross fitting. Default is K=5.
 #' @param split_ratio Ratio for splitting of training data for the two prediction tasks. Default is 0.5:0.5.
 #' @param parallel Logic value indicating if parallel computation should be used. Default is FALSE. If TRUE, BPPARAM needs to be initialized
@@ -21,26 +21,26 @@
 #'
 #' @export
 association_testing=function(Y, X, Z, index_pairs=NULL, 
-transform_functions_x=NULL, transform_functions_y=NULL, 
-learner_x=lm_learner, prediction_x=lm_predict, learner_y=lm_learner, prediction_y=lm_predict, 
+transform_functions_x=NULL, 
+learner_x=lm_learner, prediction_x=lm_predict, learner_y=lm_learner, prediction_y=lm_predict, method="double_cf",
 K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 {
 	  ### initial checks
-	  .input_checks(Y=Y, X=X, Z=Z, split_ratio=split_ratio, num_splits=2, nomissX=FALSE, nomissY=FALSE, K=K, parallel=parallel, BPPARAM=BPPARAM)
+	  .input_checks(Y=Y, X=X, Z=Z, nomissX=FALSE, nomissY=FALSE, parallel=parallel, BPPARAM=BPPARAM)
 	  
 	  .check_model(learner=learner_x, prediction=prediction_x)
 	  .check_model(learner=learner_y, prediction=prediction_y)
+	  
+	  if(!(method %in% c("double_cf","single_cf","no_split")))
+	  {
+		 stop("method unknown.")
+	  }
 	  
 	  if(is.null(transform_functions_x)){
 		 fun_x <- function(x) { return(x) }
 		 transform_functions_x=list()
 		 transform_functions_x[[1]]=fun_x
 	  }
-	  if(is.null(transform_functions_y)){
-		 fun_y <- function(y) { return(y) }
-		 transform_functions_y=list()
-		 transform_functions_y[[1]]=fun_y
-      }
 	  
 	  ################################################
 	  ### get dimensions
@@ -64,17 +64,28 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 	  }
 	  ################################################################
 	  ### get data splits
-	  splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio)
+	  if(method=="double_cf")
+	  {
+		splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio)
+	  }
+	  if(method=="single_cf")
+	  {
+		splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio, single=TRUE)
+	  }
+	  if(method=="no_split")
+	  {
+		splits=.create_no_split_data(N=N, subs=2)
+	  }
 	  
 	  ################################################################
 	  ### compute residuals
 	  if(!parallel){
 		  Xrs=.get_residuals(Outcome=X, Z=Z, transform_functions=transform_functions_x, splits=splits, training_part=1, learner=learner_x, prediction=prediction_x)
-		  Yrs=.get_residuals(Outcome=Y, Z=Z, transform_functions=transform_functions_y, splits=splits, training_part=2, learner=learner_y, prediction=prediction_y)
+		  Yrs=.get_residuals(Outcome=Y, Z=Z, splits=splits, training_part=2, learner=learner_y, prediction=prediction_y)
 	  }
 	  if(parallel){
 		  Xrs=.get_residuals_parallel(Outcome=X, Z=Z, transform_functions=transform_functions_x, splits=splits, BPPARAM=BPPARAM, training_part=1, learner=learner_x, prediction=prediction_x)
-		  Yrs=.get_residuals_parallel(Outcome=Y, Z=Z, transform_functions=transform_functions_y, splits=splits, BPPARAM=BPPARAM, training_part=2, learner=learner_y, prediction=prediction_y)
+		  Yrs=.get_residuals_parallel(Outcome=Y, Z=Z, splits=splits, BPPARAM=BPPARAM, training_part=2, learner=learner_y, prediction=prediction_y)
 	  }
 	  ###################################################################
 	  ### perform double machine learning testing
