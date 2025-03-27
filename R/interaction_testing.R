@@ -79,7 +79,7 @@ learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ra
 				j <- idx[2]
 				Y_resid=.get_linear_additive_residuals(Outcome=Y, X=as.matrix(X[,i]), Z=Z, splits=splits,  training_part=1, learner=learner_y, prediction=prediction_y)
 				interaction_term=X[,i]*Z[,j]
-				interaction_variable_resid=.ace(interaction_term=interaction_term, X=X, Z=Z, splits, training_part=2, learner=learner_ace,
+				interaction_variable_resid=.ace(interaction_term=interaction_term, X=as.matrix(X[,i]), Z=Z, splits, training_part=2, learner=learner_ace,
 				prediction=prediction_ace)
 				
 				stat=sum(Y_resid*interaction_variable_resid, na.rm=TRUE)
@@ -97,7 +97,7 @@ learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ra
 				j <- index_pairs[id,2]
 				Y_resid=.get_linear_additive_residuals(Outcome=Y, X=as.matrix(X[,i]), Z=Z, splits=splits,  training_part=1, learner=learner_y, prediction=prediction_y)
 				interaction_term=X[,i]*Z[,j]
-				interaction_variable_resid=.ace(interaction_term=interaction_term, X=X, Z=Z, splits, training_part=2, learner=learner_ace,
+				interaction_variable_resid=.ace(interaction_term=interaction_term, X=as.matrix(X[,i]), Z=Z, splits, training_part=2, learner=learner_ace,
 				prediction=prediction_ace)
 				
 				stat=sum(Y_resid*interaction_variable_resid, na.rm=TRUE)
@@ -153,11 +153,11 @@ learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ra
 			
 			inter_train=interaction_term[inds_train];
 			Z_train=Z[inds_train,];
-			X_train=X[inds_train,];
+			X_train=as.matrix(X[inds_train,]);
 			
 			inter_test=interaction_term[inds_test];
 			Z_test=Z[inds_test,];
-			X_test=X[inds_test,];
+			X_test=as.matrix(X[inds_test,]);
 			
 			
 			ctr=1

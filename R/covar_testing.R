@@ -155,7 +155,8 @@ prediction_x, learner_y_stage1, learner_y_stage2, prediction_y_stage1, predictio
 				
 				Y1_1=Y[inds_train1,j1]; 
 				Y2_2=Y[inds_train2,j2]
-				Y1_3=Y[inds_train3,j1]; Y2_3=Y[inds_train3,j2]
+				Y1_3=Y[inds_train3,j1]; 
+				Y2_3=Y[inds_train3,j2]
 				
 				X_1=X[inds_train1,i];
 				X_2=X[inds_train2,i];
