@@ -134,12 +134,12 @@ K=5, split_ratio=c(0.3333, 0.3333, 1-0.3333-0.3333), parallel=FALSE, BPPARAM=NUL
         inds_train=splits[[k]]$inds_train[[training_part]]
         Y_train=Y[inds_train,]
         Y_train_p=Y[inds_train,]
-        predictors=as.matrix(cbind(X[inds_train,1], Z[inds_train,]))
+        predictors=as.matrix(cbind(X[inds_train,p], Z[inds_train,]))
         XXi = solve(t(predictors) %*% predictors)
         for(i in 1:ncol(Y))
         {
            betas=XXi %*% t(predictors) %*% Y_train[,i]
-           Y_train_p[,i]=X[inds_train,1] * betas[1]
+           Y_train_p[,i]=X[inds_train,p] * betas[1]
         }
         evd=eigen(t(Y_train_p) %*% Y_train_p)
         v=evd$vectors[,1:num_factors]
