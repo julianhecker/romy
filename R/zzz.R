@@ -3,5 +3,8 @@
 #' @importFrom splines bs
 #' @importFrom stats rnorm
 #' @importFrom stats lm
-#' @importFrom quantreg rq.fit.br
+#' @importFrom stats predict
+#' @importFrom stats binomial
+#' @importFrom stats gaussian
+#' @importFrom SuperLearner SuperLearner
 NULL

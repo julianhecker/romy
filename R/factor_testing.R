@@ -90,8 +90,8 @@ K=5, split_ratio=c(0.3333, 0.3333, 1-0.3333-0.3333), parallel=FALSE, BPPARAM=NUL
 	    
 	  ###################################################################
 	  ### perform double machine learning testing
-	  factors[[1]][[1]][,1]=1; factors[[1]][[2]][,1]=1; factors[[1]][[3]][,1]=1; factors[[1]][[4]][,1]=1; factors[[1]][[5]][,1]=1; 
-		results_df=.dml_association_factor_testing(Xrs=Xrs, Y=Y, Z=Z, col_X=colnames(X), splits=splits, factors, num_factors = 3)
+	  #factors[[1]][[1]][,1]=1; factors[[1]][[2]][,1]=1; factors[[1]][[3]][,1]=1; factors[[1]][[4]][,1]=1; factors[[1]][[5]][,1]=1; 
+	  results_df=.dml_association_factor_testing(Xrs=Xrs, Y=Y, Z=Z, col_X=colnames(X), splits=splits, factors, num_factors = 3)
 	  
 	  
 	  ###################################################################

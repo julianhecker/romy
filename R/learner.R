@@ -296,3 +296,109 @@ mlr3_lightgbm_predict=function(obj, data)
 
 
 
+###################################################################################
+### SuperLearner
+
+
+#' Training of SuperLearner for gaussian link functions
+#'
+#' This function performs training for SuperLearner approach with gaussian link function
+#'
+#' @param Outcome Outcome data.
+#' @param data Covariate data for prediction.
+#'
+#' @return trained model.
+#'
+#' @export
+superlearner_gaussian_learner=function(Outcome, data)
+{
+  if (!requireNamespace("SuperLearner", quietly = TRUE)) {
+    stop("Package 'SuperLearner' is required for this function. Please install it.", call. = FALSE)
+  }
+  learners <- c("SL.glm", "SL.rpart", "SL.randomForest")
+  data <- data.frame(Outcome=Outcome, data=data)
+  ### learn using non-NA data
+  data=data[complete.cases(data),]
+  
+  fit <- SuperLearner(Y = data$Outcome, X = as.data.frame(data$data), 
+                         family = gaussian(), 
+                         SL.library = learners,
+                         method = "method.NNLS")  # Non-negative least squares
+  
+  return(fit)
+}
+
+
+#' Prediction using SuperLearner (gaussian link)
+#'
+#' This function performs prediction using a trained SuperLearner model with gaussian link.
+#'
+#' @param obj Trained SuperLearner model.
+#' @param data Covariate data for prediction.
+#'
+#' @return predicted Outcome values.
+#'
+#' @export
+superlearner_gaussian_predict=function(obj, data)
+{
+  ### setup data
+  data <- data.frame(data=data)
+  ### predict
+  preds <- predict(obj, newdata = as.data.frame(data))$pred
+
+  ### return predicted values
+  return(preds)
+}
+
+
+
+
+#' Training of SuperLearner for binomial link functions
+#'
+#' This function performs training for SuperLearner approach with binomial link function
+#'
+#' @param Outcome Outcome data.
+#' @param data Covariate data for prediction.
+#'
+#' @return trained model.
+#'
+#' @export
+superlearner_binomial_learner=function(Outcome, data)
+{
+  if (!requireNamespace("SuperLearner", quietly = TRUE)) {
+    stop("Package 'SuperLearner' is required for this function. Please install it.", call. = FALSE)
+  }
+  learners <- c("SL.glm", "SL.rpart", "SL.randomForest")
+  data <- data.frame(Outcome=Outcome, data=data)
+  ### learn using non-NA data
+  data=data[complete.cases(data),]
+  
+  fit <- SuperLearner(Y = data$Outcome, X = as.data.frame(data$data), 
+                         family = binomial(), 
+                         SL.library = learners,
+                         method = "method.NNLS")  # Non-negative least squares
+  
+  return(fit)
+}
+
+
+#' Prediction using SuperLearner (binomial link)
+#'
+#' This function performs prediction using a trained SuperLearner model with binomial link.
+#'
+#' @param obj Trained SuperLearner model.
+#' @param data Covariate data for prediction.
+#'
+#' @return predicted Outcome values.
+#'
+#' @export
+superlearner_binomial_predict=function(obj, data)
+{
+  ### setup data
+  data <- data.frame(data=data)
+  ### predict
+  preds <- predict(obj, newdata = as.data.frame(data))$pred
+
+  ### return predicted values
+  return(preds)
+}

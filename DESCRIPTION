@@ -15,8 +15,8 @@ Imports:
     mlr3,
     mlr3extralearners,
     mlr3learners,
-    quantreg,
     splines,
+    SuperLearner,
     tibble
 Suggests: 
     BiocParallel,
