@@ -17,7 +17,7 @@
 #' @param parallel Logic value indicating if parallel computation should be used. Default is FALSE. If TRUE, BPPARAM needs to be initialized
 #' @param BPPARAM BPPARAM object for BiocParallel parallel computation. Default is NULL.
 #'
-#' return Dataframe containing the p-values for all tests.
+#' return Dataframe containing the p-values for all tests, including ACAT results (if more than 1 test per combination).
 #'
 #' @export
 association_testing=function(Y, X, Z, index_pairs=NULL, 
@@ -139,34 +139,29 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 		stats <- numeric(m)
 		variances <- numeric(m)
 		covariance_mat <- matrix(0, nrow = m, ncol = m)
+		
+		N=nrow(Yrs[[1]])
+		
+		tmp_mat=matrix(0, nrow=N, ncol=m)
 
-		ctr1 <- 0
+		ctr <- 0
 
-		for (k1 in 1:m1) {
-			  X_k1 <- Xrs[[k1]][, i]  
+		for (k in 1:m1) {
+			  X_k <- Xrs[[k]][, i]  
 		  
-			  for (l1 in 1:m2) {
-					ctr1 <- ctr1 + 1
-					Y_l1 <- Yrs[[l1]][, j]  
+			  for (l in 1:m2) {
+					ctr <- ctr + 1
+					Y_l <- Yrs[[l]][, j]  
 					
-					# Calculate stat and variances
-					stats[ctr1] <- sum(X_k1 * Y_l1, na.rm = TRUE)
-					variances[ctr1] <- sum(X_k1^2 * Y_l1^2, na.rm = TRUE)
+					tmp_mat[,ctr]=X_k * Y_l
 					
-					ctr2 <- 0
 					
-					for (k2 in 1:m1) {
-						  X_k2 <- Xrs[[k2]][, i] 
-					  
-						  for (l2 in 1:m2) {
-							ctr2 <- ctr2 + 1
-							Y_l2 <- Yrs[[l2]][, j]  
-							
-							covariance_mat[ctr1, ctr2] <- sum(X_k1 * Y_l1 * X_k2 * Y_l2, na.rm = TRUE)
-						  }
-					}
 			  }
 		}
+		stats=colSums(tmp_mat, na.rm=T)
+		tmp_mat=tmp_mat-colMeans(tmp_mat, na.rm=T)
+		variances=colSums(tmp_mat**2, na.rm=T)
+		covariance_mat=.na_safe_matrix_product(t(tmp_mat), tmp_mat)
 
 		p <- 2 * pnorm(-abs(stats / sqrt(variances)), 0, 1) # compute asymptotic p-values based on normal distribution
 		
@@ -213,33 +208,28 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 		variances <- numeric(m)
 		covariance_mat <- matrix(0, nrow = m, ncol = m)
 
-		ctr1 <- 0
+		N=nrow(Yrs[[1]])
+		
+		tmp_mat=matrix(0, nrow=N, ncol=m)
 
-		for (k1 in 1:m1) {
-			  X_k1 <- Xrs[[k1]][, i]  
+		ctr <- 0
+
+		for (k in 1:m1) {
+			  X_k <- Xrs[[k]][, i]  
 		  
-			  for (l1 in 1:m2) {
-					ctr1 <- ctr1 + 1
-					Y_l1 <- Yrs[[l1]][, j]  
+			  for (l in 1:m2) {
+					ctr <- ctr + 1
+					Y_l <- Yrs[[l]][, j]  
 					
-					# Calculate stat and variances
-					stats[ctr1] <- sum(X_k1 * Y_l1, na.rm = TRUE)
-					variances[ctr1] <- sum(X_k1^2 * Y_l1^2, na.rm = TRUE)
+					tmp_mat[,ctr]=X_k * Y_l
 					
-					ctr2 <- 0
 					
-					for (k2 in 1:m1) {
-						  X_k2 <- Xrs[[k2]][, i] 
-					  
-						  for (l2 in 1:m2) {
-							ctr2 <- ctr2 + 1
-							Y_l2 <- Yrs[[l2]][, j]  
-							
-							covariance_mat[ctr1, ctr2] <- sum(X_k1 * Y_l1 * X_k2 * Y_l2, na.rm = TRUE)
-						  }
-					}
 			  }
 		}
+		stats=colSums(tmp_mat, na.rm=T)
+		tmp_mat=tmp_mat-colMeans(tmp_mat, na.rm=T)
+		variances=colSums(tmp_mat**2, na.rm=T)
+		covariance_mat=.na_safe_matrix_product(t(tmp_mat), tmp_mat)
 
 		p <- 2 * pnorm(-abs(stats / sqrt(variances)), 0, 1) # compute asymptotic p-values based on normal distribution
 		

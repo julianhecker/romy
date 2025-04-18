@@ -143,8 +143,8 @@ prediction_x, learner_y_stage1, learner_y_stage2, prediction_y_stage1, predictio
 			j1 = idx[2]
 			j2 = idx[3]
 			
-			stat=0
-			var_est=0
+			N=nrow(Y)
+			tmp_vec=rep(0, N)
 			
 			for(k in 1:K){
 				
@@ -174,10 +174,12 @@ prediction_x, learner_y_stage1, learner_y_stage2, prediction_y_stage1, predictio
 				eval=.evaluate_models_covar(Y1=Y[inds_test, j1], Y2=Y[inds_test, j2], X=X[inds_test], Z=Z[inds_test,], 
 				model_data=train, prediction_y_stage1=prediction_y_stage1, prediction_y_stage2=prediction_y_stage2, prediction_x=prediction_x)
 				
-				stat=stat + sum(Xrs[[1]][inds_test,i]*eval$res_yy, na.rm=T)
-				var_est=var_est + sum(Xrs[[1]][inds_test,i]**2*eval$res_yy**2, na.rm=T)
+				tmp_vec[inds_test]=Xrs[[1]][ind_test,i]*eval$res_yy
 				
 			}
+			stat=sum(tmp_vec, na.rm=T)
+			mean_stat=mean(stat, na.rm=T)
+			var_est=sum((tmp_vec-mean_stat)**2, na.rm=T)
 			zsc=stat/sqrt(var_est)
 			pval=2*pnorm(-abs(zsc),0,1)
 			c(matrix1_col = col_X[i], matrix2_col = col_Y[j1], matrix3_col = col_Y[j2], p_value=pval)
@@ -216,8 +218,8 @@ prediction_x, learner_y_stage1, learner_y_stage2, prediction_y_stage1, predictio
 			j1 = index_triples[id,2]
 			j2 = index_triples[id,3]
 			
-			stat=0
-			var_est=0
+			N=nrow(Y)
+			tmp_vec=rep(0, N)
 			
 			for(k in 1:K){
 				
@@ -246,10 +248,12 @@ prediction_x, learner_y_stage1, learner_y_stage2, prediction_y_stage1, predictio
 				eval=.evaluate_models_covar(Y1=Y[inds_test, j1], Y2=Y[inds_test, j2], X=X[inds_test], Z=Z[inds_test,], 
 				model_data=train, prediction_y_stage1=prediction_y_stage1, prediction_y_stage2=prediction_y_stage2, prediction_x=prediction_x)
 				
-				stat=stat + sum(Xrs[[1]][inds_test,i]*eval$res_yy, na.rm=T)
-				var_est=var_est + sum(Xrs[[1]][inds_test,i]**2*eval$res_yy**2, na.rm=T)
+				tmp_vec[inds_test]=Xrs[[1]][ind_test,i]*eval$res_yy
 				
 			}
+			stat=sum(tmp_vec, na.rm=T)
+			mean_stat=mean(stat, na.rm=T)
+			var_est=sum((tmp_vec-mean_stat)**2, na.rm=T)
 			zsc=stat/sqrt(var_est)
 			pval=2*pnorm(-abs(zsc),0,1)
 			c(matrix1_col = col_X[i], matrix2_col = col_Y[j1], matrix3_col = col_Y[j2], p_value=pval)

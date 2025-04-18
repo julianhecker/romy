@@ -316,11 +316,13 @@ superlearner_gaussian_learner=function(Outcome, data)
     stop("Package 'SuperLearner' is required for this function. Please install it.", call. = FALSE)
   }
   learners <- c("SL.glm", "SL.rpart", "SL.randomForest")
+  cn=colnames(data)
   data <- data.frame(Outcome=Outcome, data=data)
   ### learn using non-NA data
   data=data[complete.cases(data),]
-  
-  fit <- SuperLearner(Y = data$Outcome, X = as.data.frame(data$data), 
+  X=as.data.frame(data[,-1])
+  colnames(X)=cn
+  fit <- SuperLearner(Y = data$Outcome, X = X, 
                          family = gaussian(), 
                          SL.library = learners,
                          method = "method.NNLS")  # Non-negative least squares
@@ -342,9 +344,11 @@ superlearner_gaussian_learner=function(Outcome, data)
 superlearner_gaussian_predict=function(obj, data)
 {
   ### setup data
+  cn=colnames(data)
   data <- data.frame(data=data)
+  colnames(data)=cn
   ### predict
-  preds <- predict(obj, newdata = as.data.frame(data))$pred
+  preds <- predict(obj, newdata = data)$pred
 
   ### return predicted values
   return(preds)
@@ -372,8 +376,9 @@ superlearner_binomial_learner=function(Outcome, data)
   data <- data.frame(Outcome=Outcome, data=data)
   ### learn using non-NA data
   data=data[complete.cases(data),]
-  
-  fit <- SuperLearner(Y = data$Outcome, X = as.data.frame(data$data), 
+  X=as.data.frame(data[,-1])
+  colnames(X)=cn
+  fit <- SuperLearner(Y = data$Outcome, X =X, 
                          family = binomial(), 
                          SL.library = learners,
                          method = "method.NNLS")  # Non-negative least squares
@@ -394,10 +399,11 @@ superlearner_binomial_learner=function(Outcome, data)
 #' @export
 superlearner_binomial_predict=function(obj, data)
 {
-  ### setup data
+  cn=colnames(data)
   data <- data.frame(data=data)
+  colnames(data)=cn
   ### predict
-  preds <- predict(obj, newdata = as.data.frame(data))$pred
+  preds <- predict(obj, newdata = data)$pred
 
   ### return predicted values
   return(preds)

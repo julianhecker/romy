@@ -90,7 +90,7 @@ K=5, split_ratio=c(0.3333, 0.3333, 1-0.3333-0.3333), parallel=FALSE, BPPARAM=NUL
 	    
 	  ###################################################################
 	  ### perform double machine learning testing
-	  #factors[[1]][[1]][,1]=1; factors[[1]][[2]][,1]=1; factors[[1]][[3]][,1]=1; factors[[1]][[4]][,1]=1; factors[[1]][[5]][,1]=1; 
+	  
 	  results_df=.dml_association_factor_testing(Xrs=Xrs, Y=Y, Z=Z, col_X=colnames(X), splits=splits, factors, num_factors = 3)
 	  
 	  
@@ -239,8 +239,11 @@ K=5, split_ratio=c(0.3333, 0.3333, 1-0.3333-0.3333), parallel=FALSE, BPPARAM=NUL
       		Yrs=.get_individual_residuals(Y=Y, Z=Z, ind_x=i, splits=splits, factors=factors, training_part=3, num_factors=num_factors)
       		
       		stats=colSums(Xrs[,i]*Yrs)
-      		variances=colSums(Xrs[,i]**2*Yrs**2)
-      		covariance_mat = t(Xrs[,i]*Yrs) %*% (Xrs[,i]*Yrs)
+			stats_means=colMeans(Xrs[,i]*Yrs)
+			tmp=Xrs[,i]*Yrs-stats_means
+      	
+      		covariance_mat = t(tmp) %*% (tmp)
+			variances=diag(covariance_mat)
       		
       		p <- 2 * pnorm(-abs(stats / sqrt(variances)), 0, 1) # compute asymptotic p-values based on normal distribution
       		

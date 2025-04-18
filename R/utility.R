@@ -379,11 +379,13 @@
 		N=1000
 		X=as.matrix(rnorm(N))
 		Y=X+rnorm(N)*0.1
+		X=data.frame(X=X)
 		### fit prediction model
 		fit=learner(Outcome=Y, data=X)
 		### simulate new data
 		X=as.matrix(rnorm(N))
 		Y=X+rnorm(N)*0.1
+		X=data.frame(X=X)
 		### predict using trained model
 		pred=prediction(fit, data=X)
 		### check prediction quality, should have R^2>50% for this simple model.
@@ -397,3 +399,22 @@
 
 
 
+.na_safe_matrix_product= function(A, B) {
+ 
+  n <- nrow(A)
+  m <- ncol(B)
+  
+  
+  result <- matrix(NA_real_, nrow = n, ncol = m)
+  
+  for (i in 1:n) {
+    for (j in 1:m) {
+      a_row <- A[i, ]
+      b_col <- B[, j]
+      
+      result[i, j] <- sum(a_row * b_col, na.rm=T)
+    }
+  }
+  
+  return(result)
+}
