@@ -11,24 +11,27 @@
 #' @param prediction_ace Prediction model to predict in the ACE algorithm. Defaul is linear regression.
 #' @param learner_y Prediction model function to learn prediction of Y given X and Z (without interactions). Defaul is linear regression.
 #' @param prediction_y Prediction model to predict Y given X and Z. Defaul is linear regression.
-#' @param method Method for controlling cross-fitting. Options are 'double_cf', 'single_cf', or 'no_split'. Default is 'double_cf'.
+#' @param method Method for controlling cross-fitting. Options are 'double_cf' and 'single_cf'. Default is 'double_cf'.
 #' @param K Value for K for the K fold cross fitting. Default is K=5.
-#' @param split_ratio Ratio for splitting of training data for the two prediction tasks. Default is 0.5:0.5.
 #' @param parallel Logic value indicating if parallel computation should be used. Default is FALSE. If TRUE, BPPARAM needs to be initialized
 #' @param BPPARAM BPPARAM object for BiocParallel parallel computation, default is NULL.
 #'
 #' return Dataframe containing the p-values for all tests.
 #'
 #' @export
-interaction_testing=function(Y, X, Z, index_pairs=NULL, learner_ace=lm_learner_simple, prediction_ace=lm_predict_simple, 
-learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ratio=c(0.5, 0.5), parallel=FALSE, BPPARAM=NULL)
+romy_inter=function(Y, X, Z, index_pairs=NULL, learner_ace=lm_learner_simple, prediction_ace=lm_predict_simple, 
+learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, parallel=FALSE, BPPARAM=NULL)
 {
 	  ### initial checks
-	  .input_checks(Y=Y, X=X, Z=Z, nomissX=TRUE, nomissY=FALSE, parallel=parallel, BPPARAM=BPPARAM)
+	  .input_checks(Y=Y, X=X, Z=Z, Z2=Z, nomissX=TRUE, nomissY=FALSE, parallel=parallel, BPPARAM=BPPARAM)
 	  
 	  .check_model(learner=learner_ace, prediction=prediction_ace)
 	  .check_model(learner=learner_y, prediction=prediction_y)
 	  
+	  if(!(method %in% c("double_cf","single_cf")))
+	  {
+	  	 stop("method not implemented for association testing.")
+	  }
 	  ################################################
 	  ### get dimensions
 	  N=nrow(Y)
@@ -47,6 +50,7 @@ learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ra
 	  Y=scale(Y, center = TRUE, scale = FALSE) # ignores NA value
 	  X=scale(X, center = TRUE, scale = TRUE)
 	  Z=scale(Z, center = TRUE, scale = TRUE)
+	  
 	  if(is.null(colnames(X))){
 	     colnames(X)=paste0("X",1:ncol(X))
 	  }
@@ -57,18 +61,23 @@ learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ra
 	  ################################################################
 	  ### get data splits
 	  
+	  
 	  if(method=="double_cf")
 	  {
-		splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio)
+		splits=.create_splits(N=N, K=K, subs=3)
+		training_y=1
+		training_ace_inter=2
+		training_ace_y=3
 	  }
 	  if(method=="single_cf")
 	  {
-		splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio, single=TRUE)
+		splits=.create_splits(N=N, K=K, subs=2)
+		training_y=1
+		training_ace_inter=2
+		training_ace_y=2
 	  }
-	  if(method=="no_split")
-	  {
-		splits=.create_no_split_data(N=N, subs=2)
-	  }
+	  
+	  
 	  ################################################################
 	  ### perform interaction testing
 	  
@@ -77,10 +86,16 @@ learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ra
 		  results <- apply(index_pairs, 1, function(idx){
 				i <- idx[1]
 				j <- idx[2]
-				Y_resid=.get_linear_additive_residuals(Outcome=Y, X=as.matrix(X[,i]), Z=Z, splits=splits,  training_part=1, learner=learner_y, prediction=prediction_y)
+				Y_obj=.get_residuals_and_predictions(Outcome=Y, Z=cbind(X[,i],Z), splits=splits, training_part=training_y, learner=learner_y, prediction=prediction_y)
+				#Y_resid=.get_linear_additive_residuals(Outcome=Y, X=as.matrix(X[,i]), Z=Z, splits=splits,  training_part=training_y, learner=learner_y, prediction=prediction_y)
 				interaction_term=X[,i]*Z[,j]
-				interaction_variable_resid=.ace(interaction_term=interaction_term, X=as.matrix(X[,i]), Z=Z, splits, training_part=2, learner=learner_ace,
+				interaction_variable_resid=.ace(Outcome=interaction_term, X=as.matrix(X[,i]), Z1=as.matrix(Z[,j]), Z2=as.matrix(Z[,-j]), splits, training_part=training_ace_inter, learner=learner_ace,
 				prediction=prediction_ace)
+				Y_pred=Y_obj$Predictions[[1]][,1]
+				P_Y_pred=.ace(Outcome=Y_pred, X=as.matrix(X[,i]), Z1=as.matrix(Z[,j]), Z2=as.matrix(Z[,-j]), splits, training_part=training_ace_y, learner=learner_ace,
+				prediction=prediction_ace)
+				Y_resid=Y_obj$Residuals[[1]][,1]
+				Y_resid=Y_resid+P_Y_pred
 				
 				stat=sum(Y_resid*interaction_variable_resid, na.rm=TRUE)
 				var_est=sum(Y_resid**2*interaction_variable_resid**2, na.rm=TRUE)
@@ -95,10 +110,16 @@ learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ra
 		  compute_results=function(id){
 				i <- index_pairs[id,1]
 				j <- index_pairs[id,2]
-				Y_resid=.get_linear_additive_residuals(Outcome=Y, X=as.matrix(X[,i]), Z=Z, splits=splits,  training_part=1, learner=learner_y, prediction=prediction_y)
+				Y_obj=.get_residuals_and_predictions(Outcome=Y, Z=cbind(X[,i],Z), splits=splits, training_part=training_y, learner=learner_y, prediction=prediction_y)
+				#Y_resid=.get_linear_additive_residuals(Outcome=Y, X=as.matrix(X[,i]), Z=Z, splits=splits,  training_part=training_y, learner=learner_y, prediction=prediction_y)
 				interaction_term=X[,i]*Z[,j]
-				interaction_variable_resid=.ace(interaction_term=interaction_term, X=as.matrix(X[,i]), Z=Z, splits, training_part=2, learner=learner_ace,
+				interaction_variable_resid=.ace(Outcome=interaction_term, X=as.matrix(X[,i]), Z1=as.matrix(Z[,j]), Z2=as.matrix(Z[,-j]), splits, training_part=training_ace_inter, learner=learner_ace,
 				prediction=prediction_ace)
+				Y_pred=Y_obj$Predictions[[1]][,1]
+				P_Y_pred=.ace(Outcome=Y_pred, X=as.matrix(X[,i]), Z1=as.matrix(Z[,j]), Z2=as.matrix(Z[,-j]), splits, training_part=training_ace_y, learner=learner_ace,
+				prediction=prediction_ace)
+				Y_resid=Y_obj$Residuals[[1]][,1]
+				Y_resid=Y_resid+P_Y_pred
 				
 				stat=sum(Y_resid*interaction_variable_resid, na.rm=TRUE)
 				var_est=sum(Y_resid**2*interaction_variable_resid**2, na.rm=TRUE)
@@ -134,91 +155,49 @@ learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, split_ra
 
 #' This functions performs the alternating condition expectation algorithm, the outcome is the interaction term.
 #'
-#' @param interaction_term Measurements for the interaction term.
-#' @param X A matrix containing X.
-#' @param Z A matrix containing the covariates Z.
+#' @param Outcome Outcome measurements.
+#' @param X X observations (vector).
+#' @param Z1 Z1 observations (vector).
+#' @param Z2 A matrix containing the covariates Z2.
 #' @param splits The splits of the samples determining the K-fold cross fitting.
 #' @param training_part The part of the training data that is used to train the prediction model. Default is 1.
 #' @param learner Function pointer to prediction model (training). Default is 'lm_learner_simple'.
 #' @param prediction Prediction model to predict Y given X and Z.
 #'
-.ace=function(interaction_term, X, Z, splits, training_part, learner, prediction)
+.ace=function(Outcome, X, Z1, Z2, splits, training_part, learner, prediction)
 {
 	K=length(splits)
-	resid_interaction_variable=interaction_term
+	resid_variable=Outcome
 	for(k in 1:K){
 	
 			inds_train=splits[[k]]$inds_train[[training_part]] 
 			inds_test=splits[[k]]$inds_test
 			
-			inter_train=interaction_term[inds_train];
-			Z_train=Z[inds_train,];
-			X_train=as.matrix(X[inds_train,]);
+			out_train=Outcome[inds_train];
+			Z_train=cbind(Z1[inds_train,], Z2[inds_train,]);
+			X_train=cbind(X[inds_train,], Z2[inds_train,]);
 			
-			inter_test=interaction_term[inds_test];
-			Z_test=Z[inds_test,];
-			X_test=as.matrix(X[inds_test,]);
+			out_test=Outcome[inds_test];
+			Z_test=cbind(Z1[inds_test,], Z2[inds_test,]);
+			X_test=cbind(X[inds_test,], Z2[inds_test,]);
 			
 			
 			ctr=1
 			while(ctr<5)
 			{
-			   fit=learner(inter_train, X_train)
-			   inter_train=inter_train - prediction(fit, X_train)
+			   fit=learner(out_train, X_train)
+			   out_train=out_train - prediction(fit, X_train)
 			   #
-			   inter_test=inter_test - prediction(fit, X_test)
+			   out_test=out_test - prediction(fit, X_test)
 			   ##############################################################
-			   fit=learner(inter_train, Z_train)
-			   inter_train=inter_train - prediction(fit, Z_train)
+			   fit=learner(out_train, Z_train)
+			   out_train=out_train - prediction(fit, Z_train)
 			   #
-			   inter_test=inter_test - prediction(fit, Z_test)
+			   out_test=out_test - prediction(fit, Z_test)
 			   ctr=ctr+1
 			}
-			resid_interaction_variable[inds_test]=inter_test
+			resid_variable[inds_test]=out_test
 	}
-	return(resid_interaction_variable)
+	return(resid_variable)
 }
 
-#' This function computes residuals using a prediction model that does not incorporate interactions between X and Z.
-#'
-#' @param Outcome A matrix containing the outcome measurements.
-#' @param X A matrix containing X.
-#' @param Z A matrix containing the covariates Z.
-#' @param splits The splits of the samples determining the K-fold cross fitting.
-#' @param training_part The part of the training data that is used to train the prediction model. Default is 1.
-#' @param learner Function pointer to prediction model (training). Default is 'lm_learner_simple'.
-#' @param prediction Prediction model to predict Y given X and Z.
-#'
-.get_linear_additive_residuals=function(Outcome, X, Z, splits, training_part, learner, prediction)
-{
-	  K=length(splits)
-	  Resid=numeric(length(Outcome))
-	  for(k in 1:K)
-	  {
-			inds_train=splits[[k]]$inds_train[[training_part]] 
-			inds_test=splits[[k]]$inds_test
-			
-			O_train=Outcome[inds_train];
-			Z_train=Z[inds_train,];
-			X_train=X[inds_train,];
-			
-			O_test=Outcome[inds_test];
-			Z_test=Z[inds_test,];
-			X_test=X[inds_test,];
-			
-			
-			data_train=data.frame(X=X_train, Z=Z_train)
-			colnames(data_train)=paste0("C",1:ncol(data_train))
-			
-			data_test=data.frame(X=X_test, Z=Z_test)
-			colnames(data_test)=paste0("C",1:ncol(data_test))
-			
-			
-			fit=learner(O_train, data_train)
-			res=O_test-prediction(fit, data_test)
-			
-			Resid[inds_test]=res
-
-	  }
-	  return(Resid)
-}

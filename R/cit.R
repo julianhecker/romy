@@ -1,39 +1,43 @@
-#' ROMY association testing
+#' ROMY-CIT
 #'
 #' This function performs association testing between variables in Y and X, adjusting for Z.
 #'
 #' @param Y A matrix containing the measurements for Y.
 #' @param X A matrix containing the measurements for X.
-#' @param Z A matrix containing the measurements for Z. No missing values allowed.
+#' @param Z A matrix containing the measurements for Z, for adjusting Z. No missing values allowed.
+#' @param Z2 A matrix containing the measurements for Z2, for adjusting X. No missing values allowed, default is NULL. In this case, the computations use Z2=Z.
 #' @param index_pairs A dataframe with two columns containing the pairs of indices in X and Y to be tested, respectively. Default is NULL, leading to testing all possible pairs.
-#' @param transform_functions_x List of functions to transform the measurements for X. All transformations will be considered in testing.
+#' @param transform_functions_x List of functions to transform the measurements for X. All transformations b(x) will be considered in testing. Default is NULL, implying b(x)=x.
 #' @param learner_x Prediction model function to learn prediction of X given Z. Defaul is linear regression.
 #' @param prediction_x Prediction model to predict X given Z. Default is linear regression.
 #' @param learner_y Prediction model function to learn prediction of Y given Z. Default is linear regression.
 #' @param prediction_y Prediction model to predict Y given Z. Default is linear regression.
-#' @param method Method for controlling cross-fitting. Options are 'double_cf', 'single_cf', or 'no_split'. Default is 'double_cf'.
+#' @param method Method for controlling cross-fitting. Options are 'double_cf', 'single_cf', or 'no_split'. Default is 'no_split'.
 #' @param K Value for K for the K fold cross fitting. Default is K=5.
-#' @param split_ratio Ratio for splitting of training data for the two prediction tasks. Default is 0.5:0.5.
 #' @param parallel Logic value indicating if parallel computation should be used. Default is FALSE. If TRUE, BPPARAM needs to be initialized
 #' @param BPPARAM BPPARAM object for BiocParallel parallel computation. Default is NULL.
 #'
 #' return Dataframe containing the p-values for all tests, including ACAT results (if more than 1 test per combination).
 #'
 #' @export
-association_testing=function(Y, X, Z, index_pairs=NULL, 
+romy_cit=function(Y, X, Z, Z2=NULL, index_pairs=NULL, 
 transform_functions_x=NULL, 
-learner_x=lm_learner, prediction_x=lm_predict, learner_y=lm_learner, prediction_y=lm_predict, method="double_cf",
-K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
+learner_x=lm_learner, prediction_x=lm_predict, learner_y=lm_learner, prediction_y=lm_predict, method="no_split",
+K=5, parallel=FALSE, BPPARAM=NULL)
 {
+	  if(is.null(Z2))
+	  {
+	      Z2=Z
+	  }
 	  ### initial checks
-	  .input_checks(Y=Y, X=X, Z=Z, nomissX=FALSE, nomissY=FALSE, parallel=parallel, BPPARAM=BPPARAM)
+	  .input_checks(Y=Y, X=X, Z=Z, Z2=Z2, nomissX=FALSE, nomissY=FALSE, parallel=parallel, BPPARAM=BPPARAM)
 	  
 	  .check_model(learner=learner_x, prediction=prediction_x)
 	  .check_model(learner=learner_y, prediction=prediction_y)
 	  
 	  if(!(method %in% c("double_cf","single_cf","no_split")))
 	  {
-		 stop("method unknown.")
+	  	 stop("method not implemented for association testing.")
 	  }
 	  
 	  if(is.null(transform_functions_x)){
@@ -56,6 +60,8 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 	  Y=scale(Y, center = TRUE, scale = FALSE) # ignores NA values
 	  X=scale(X, center = TRUE, scale = TRUE)
 	  Z=scale(Z, center = TRUE, scale = TRUE)
+	  Z2=scale(Z2, center = TRUE, scale = TRUE)
+	  
 	  if(is.null(colnames(X))){
 	     colnames(X)=paste0("X",1:ncol(X))
 	  }
@@ -66,26 +72,34 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 	  ### get data splits
 	  if(method=="double_cf")
 	  {
-		splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio)
+		splits=.create_splits(N=N, K=K, subs=2)
+		training_xrs=1
+		training_yrs=2
 	  }
 	  if(method=="single_cf")
 	  {
-		splits=.create_splits_2subs(K=K, N=N, split_ratio=split_ratio, single=TRUE)
+		splits=.create_splits(N=N, K=K, subs=1)
+		training_xrs=1
+		training_yrs=1
 	  }
 	  if(method=="no_split")
 	  {
-		splits=.create_no_split_data(N=N, subs=2)
+		# K ignored and set to K=1
+		splits=.create_splits(N=N, K=1, subs=1)
+		training_xrs=1
+		training_yrs=1
 	  }
+
 	  
 	  ################################################################
 	  ### compute residuals
 	  if(!parallel){
-		  Xrs=.get_residuals(Outcome=X, Z=Z, transform_functions=transform_functions_x, splits=splits, training_part=1, learner=learner_x, prediction=prediction_x)
-		  Yrs=.get_residuals(Outcome=Y, Z=Z, splits=splits, training_part=2, learner=learner_y, prediction=prediction_y)
+		  Xrs=.get_residuals(Outcome=X, Z=Z2, transform_functions=transform_functions_x, splits=splits, training_part=training_xrs, learner=learner_x, prediction=prediction_x)
+		  Yrs=.get_residuals(Outcome=Y, Z=Z, splits=splits, training_part=training_yrs, learner=learner_y, prediction=prediction_y)
 	  }
 	  if(parallel){
-		  Xrs=.get_residuals_parallel(Outcome=X, Z=Z, transform_functions=transform_functions_x, splits=splits, BPPARAM=BPPARAM, training_part=1, learner=learner_x, prediction=prediction_x)
-		  Yrs=.get_residuals_parallel(Outcome=Y, Z=Z, splits=splits, BPPARAM=BPPARAM, training_part=2, learner=learner_y, prediction=prediction_y)
+		  Xrs=.get_residuals_parallel(Outcome=X, Z=Z2, transform_functions=transform_functions_x, splits=splits, BPPARAM=BPPARAM, training_part=training_xrs, learner=learner_x, prediction=prediction_x)
+		  Yrs=.get_residuals_parallel(Outcome=Y, Z=Z, splits=splits, BPPARAM=BPPARAM, training_part=training_yrs, learner=learner_y, prediction=prediction_y)
 	  }
 	  ###################################################################
 	  ### perform double machine learning testing
@@ -118,6 +132,7 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 
 
 
+
 #' This function computes the test statistics for double machine learning 
 #' based association testing, given the residual measurements and index pairs.
 #'
@@ -132,9 +147,8 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 	results <- apply(index_pairs, 1, function(idx){
 		i <- idx[1]
 		j <- idx[2]
-		m1=length(Xrs)
-		m2=length(Yrs)
-		m=m1*m2
+		m=length(Xrs)
+		
 		
 		stats <- numeric(m)
 		variances <- numeric(m)
@@ -144,31 +158,28 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 		
 		tmp_mat=matrix(0, nrow=N, ncol=m)
 
-		ctr <- 0
-
-		for (k in 1:m1) {
-			  X_k <- Xrs[[k]][, i]  
+		for (k in 1:m) {
+			 X_ki <- Xrs[[k]][, i]  
 		  
-			  for (l in 1:m2) {
-					ctr <- ctr + 1
-					Y_l <- Yrs[[l]][, j]  
+			  
+			 Y_j <- Yrs[[1]][, j]  
 					
-					tmp_mat[,ctr]=X_k * Y_l
+			 tmp_mat[,k]=X_ki * Y_j
 					
 					
-			  }
+			  
 		}
 		stats=colSums(tmp_mat, na.rm=T)
 		tmp_mat=tmp_mat-colMeans(tmp_mat, na.rm=T)
 		variances=colSums(tmp_mat**2, na.rm=T)
 		covariance_mat=.na_safe_matrix_product(t(tmp_mat), tmp_mat)
 
-		p <- 2 * pnorm(-abs(stats / sqrt(variances)), 0, 1) # compute asymptotic p-values based on normal distribution
+		p <- exp(log(2) + pnorm(-abs(stats / sqrt(variances)), 0, 1, log.p = TRUE))
 		
 		p_overall=NA
 		tryCatch({
 			stat_overall=t(stats) %*% solve(covariance_mat) %*% stats
-		    p_overall=pchisq(stat_overall, df=m, lower.tail=FALSE) # compute overall asymptotic p-value based on chisq distribution
+			p_overall <- exp(pchisq(stat_overall, df = m, lower.tail = FALSE, log.p = TRUE))
 			
 		}, error=function(e){
 				warning("Covariance matrix not invertible, returning NA.")
@@ -200,9 +211,8 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 	
 		i <- index_pairs[id,1]
 		j <- index_pairs[id,2]
-		m1=length(Xrs)
-		m2=length(Yrs)
-		m=m1*m2
+		m=length(Xrs)
+		
 		
 		stats <- numeric(m)
 		variances <- numeric(m)
@@ -212,19 +222,17 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 		
 		tmp_mat=matrix(0, nrow=N, ncol=m)
 
-		ctr <- 0
-
-		for (k in 1:m1) {
-			  X_k <- Xrs[[k]][, i]  
+	
+		for (k in 1:m) {
+			  X_ki <- Xrs[[k]][, i]  
 		  
-			  for (l in 1:m2) {
-					ctr <- ctr + 1
-					Y_l <- Yrs[[l]][, j]  
+			  
+			  Y_j <- Yrs[[1]][, j]  
 					
-					tmp_mat[,ctr]=X_k * Y_l
+			  tmp_mat[,k]=X_ki * Y_j
 					
 					
-			  }
+			  
 		}
 		stats=colSums(tmp_mat, na.rm=T)
 		tmp_mat=tmp_mat-colMeans(tmp_mat, na.rm=T)
@@ -236,7 +244,7 @@ K=5, split_ratio=c(0.5,0.5), parallel=FALSE, BPPARAM=NULL)
 		p_overall=NA
 		tryCatch({
 			stat_overall=t(stats) %*% solve(covariance_mat) %*% stats
-		    p_overall=pchisq(stat_overall, df=m, lower.tail=FALSE) # compute overall asymptotic p-value based on chisq distribution
+			p_overall <- exp(pchisq(stat_overall, df = m, lower.tail = FALSE, log.p = TRUE))
 			
 		}, error=function(e){
 				warning("Covariance matrix not invertible, returning NA.")

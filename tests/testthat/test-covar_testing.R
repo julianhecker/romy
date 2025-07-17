@@ -7,7 +7,7 @@ test_that("check_covar_testing", {
 	colnames(X)=paste0("X",1:ncol(X))
 	colnames(Y)=paste0("Y",1:ncol(Y))
 
-	ct=covar_testing(Y, X, Z)
+	ct=romy_cov(Y, X, Z)
   
     expect_false(any(is.na(ct)))
 

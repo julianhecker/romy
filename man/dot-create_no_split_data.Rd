@@ -4,12 +4,10 @@
 \alias{.create_no_split_data}
 \title{no-cross-fitting-approach}
 \usage{
-.create_no_split_data(N, subs)
+.create_no_split_data(N)
 }
 \arguments{
 \item{N}{Overall sample size.}
-
-\item{subs}{Number of sub-splits}
 }
 \description{
 This function sets up the data such that evaluation and training data is the same.

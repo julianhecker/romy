@@ -7,12 +7,9 @@ test_that("check_association_testing", {
   colnames(X)=paste0("X",1:ncol(X))
   colnames(Y)=paste0("Y",1:ncol(Y))
 
-  at=association_testing(Y, X, Z)
+  at=romy_cit(Y, X, Z)
   
   expect_false(any(is.na(at)))
   
-  at=association_testing(Y, X, Z, method='no_split', K=1)
-  
-  expect_false(any(is.na(at)))
 
 })

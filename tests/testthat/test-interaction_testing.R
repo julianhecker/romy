@@ -8,7 +8,7 @@ test_that("check_interaction_testing", {
 	colnames(Y)=paste0("Y",1:ncol(Y))
 	colnames(Z)=paste0("Z",1:ncol(Z))
 
-	it=interaction_testing(Y, X, Z)
+	it=romy_inter(Y, X, Z)
   
     expect_false(any(is.na(it)))
 

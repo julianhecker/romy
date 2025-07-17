@@ -4,7 +4,7 @@
 \alias{.input_checks}
 \title{Input check}
 \usage{
-.input_checks(Y, X, Z, nomissX, nomissY, parallel, BPPARAM)
+.input_checks(Y, X, Z, Z2, nomissX, nomissY, parallel, BPPARAM)
 }
 \arguments{
 \item{Y}{Matrix Y.}
@@ -12,6 +12,8 @@
 \item{X}{Matrix X.}
 
 \item{Z}{Matrix Z.}
+
+\item{Z2}{Matrix Z2.}
 
 \item{nomissX}{Logic value if missing values in X should be allowed.}
 

@@ -104,7 +104,104 @@ lm_predict=function(obj, data)
   new_data=as.matrix(new_data)
   pred = new_data %*% obj
   
-  return(pred)
+  return(as.numeric(pred))
+}
+###################################################################################
+### Linear regression with quadratic and interaction terms
+
+#' Training of linear regression model
+#'
+#' This function performs training for a linear regression model, including interaction and squared terms.
+#'
+#' @param Outcome Outcome data.
+#' @param data Covariate data for prediction.
+#' @param lambda Value for lambda to ensure that Regression matrix is invertible.
+#'
+#' @return trained model.
+#'
+#' @export
+lm_learner_q=function(Outcome, data, lambda=NULL)
+{
+  ### learn using non-NA data
+  ii = !is.na(Outcome)
+  Outcome = Outcome[ii]
+  data=as.matrix(data[ii,])
+  
+  ### add splines terms
+  new_data=data.frame(matrix(ncol = 0, nrow = length(Outcome)))
+  for(i in 1:ncol(data))
+  {
+	  if(!.is_categorical(data[,i])){new_data=cbind(new_data, data[,i]) ;new_data=cbind(new_data, (data[,i]-mean(data[,i]))**2)}
+	  if(.is_categorical(data[,i])){new_data=cbind(new_data, data[,i])}
+  } 
+  for(i in 1:ncol(data))
+  {
+	  for(j in 1:ncol(data))
+	  {
+		 if(j>i)
+		 {
+			new_data=cbind(new_data,(data[,i]-mean(data[,i]))*(data[,j]-mean(data[,j])))
+		 }
+	  }
+  }
+  ### add intercept
+  new_data=cbind(new_data, 1)
+  new_data=as.matrix(new_data)
+  
+  XX=t(new_data) %*% new_data
+  if(is.null(lambda)){
+	ed=eigen(XX)
+	lambda <- 0.5*min(ed$values[ed$values > 10^-4])
+  }
+  ### least squares + regularization
+  mm = XX + lambda*diag(ncol(new_data))
+  xxx= solve(mm) %*% t(new_data)
+  beta=xxx %*% as.matrix(Outcome)
+  
+  
+  return(as.numeric(beta))
+}
+
+
+
+#' Prediction using linear regression model
+#'
+#' This function performs prediction using a linear regression model.
+#'
+#' @param obj Trained linear regression model.
+#' @param data Covariate data for prediction.
+#'
+#' @return predicted Outcome values.
+#'
+#' @export
+lm_predict_q=function(obj, data)
+{
+  ### add interaction and squared terms
+  new_data=data.frame(matrix(ncol = 0, nrow = nrow(data)))
+  for(i in 1:ncol(data))
+  {
+	  if(!.is_categorical(data[,i])){new_data=cbind(new_data, data[,i]) ;new_data=cbind(new_data, (data[,i]-mean(data[,i]))**2)}
+	  if(.is_categorical(data[,i])){new_data=cbind(new_data, data[,i])}
+  } 
+  for(i in 1:ncol(data))
+  {
+	  for(j in 1:ncol(data))
+	  {
+		 if(j>i)
+		 {
+			new_data=cbind(new_data,(data[,i]-mean(data[,i]))*(data[,j]-mean(data[,j])))
+		 }
+	  }
+  }
+  
+  ### add intercept
+  new_data=cbind(new_data, 1)
+  
+  ### predict
+  new_data=as.matrix(new_data)
+  pred = new_data %*% obj
+  
+  return(as.numeric(pred))
 }
 
 ###################################################################################
@@ -168,8 +265,9 @@ lm_predict_simple=function(obj, data)
   data=as.matrix(data)
   pred = data %*% obj
   ### return predicted values
-  return(pred)
+  return(as.numeric(pred))
 }
+
 
 ###################################################################################
 ### GAM
@@ -373,6 +471,7 @@ superlearner_binomial_learner=function(Outcome, data)
     stop("Package 'SuperLearner' is required for this function. Please install it.", call. = FALSE)
   }
   learners <- c("SL.glm", "SL.rpart", "SL.randomForest")
+  cn=colnames(data)
   data <- data.frame(Outcome=Outcome, data=data)
   ### learn using non-NA data
   data=data[complete.cases(data),]

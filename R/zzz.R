@@ -6,5 +6,7 @@
 #' @importFrom stats predict
 #' @importFrom stats binomial
 #' @importFrom stats gaussian
+#' @importFrom stats quantile
+#' @importFrom stats dist
 #' @importFrom SuperLearner SuperLearner
 NULL
