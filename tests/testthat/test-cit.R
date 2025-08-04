@@ -7,7 +7,7 @@ test_that("check_cit", {
   colnames(X)=paste0("X",1:ncol(X))
   colnames(Y)=paste0("Y",1:ncol(Y))
 
-  at=romy_cit(Y, X, Z)
+  at=romy_cit(Y=Y, X=X, Z=Z)
   
   expect_false(any(is.na(at)))
   

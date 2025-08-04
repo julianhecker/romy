@@ -8,7 +8,7 @@ test_that("check_inter", {
 	colnames(Y)=paste0("Y",1:ncol(Y))
 	colnames(Z)=paste0("Z",1:ncol(Z))
 
-	it=romy_inter(Y, X, Z)
+	it=romy_inter(Y=Y, X=X, Z=Z)
   
     expect_false(any(is.na(it)))
 

@@ -7,7 +7,7 @@ test_that("check_cov", {
 	colnames(X)=paste0("X",1:ncol(X))
 	colnames(Y)=paste0("Y",1:ncol(Y))
 
-	ct=romy_cov(Y, X, Z)
+	ct=romy_cov(Y=Y, X=X, Z=Z)
   
     expect_false(any(is.na(ct)))
 
