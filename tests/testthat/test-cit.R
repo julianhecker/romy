@@ -1,6 +1,6 @@
 library(romy)
 
-test_that("check_association_testing", {
+test_that("check_cit", {
   X=matrix(rnorm(1000*3),nrow=1000,ncol=3)
   Z=matrix(rnorm(1000*3),nrow=1000,ncol=3)
   Y=matrix(rnorm(1000*30),nrow=1000,ncol=30)

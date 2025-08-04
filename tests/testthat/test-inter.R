@@ -1,6 +1,6 @@
 library(romy)
 
-test_that("check_interaction_testing", {
+test_that("check_inter", {
 	X=matrix(rnorm(1000*30),nrow=1000,ncol=30)
 	Z=matrix(rnorm(1000*5),nrow=1000,ncol=5)
 	Y=matrix(rnorm(1000*1),nrow=1000,ncol=1)
