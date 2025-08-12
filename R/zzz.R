@@ -8,5 +8,6 @@
 #' @importFrom stats gaussian
 #' @importFrom stats quantile
 #' @importFrom stats dist
+#' @importFrom stats var
 #' @importFrom SuperLearner SuperLearner
 NULL
