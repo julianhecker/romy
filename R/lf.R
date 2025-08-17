@@ -71,6 +71,7 @@ romy_lf=function(Y, X, inds_X, epsilon=0.01, K_min=1, K_max=5, max_iter=20, eta=
   {
 	K_hat=ncol(Z_hat)
   }
+  
   return(list(Z_hat=Z_hat, K_hat=K_hat, convergence=convergence, degenerated=degenerated))
 }
 
