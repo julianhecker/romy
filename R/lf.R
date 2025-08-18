@@ -60,8 +60,11 @@ romy_lf=function(Y, X, inds_X, epsilon=0.01, K_min=1, K_max=5, max_iter=20, eta=
 			degenerated=FALSE
 		}
   }
-  
-  Z_hat=as.matrix(Z_hat_truncated)
+  Z_hat=0
+  if(!is.null(Z_hat_truncated))
+  {
+	Z_hat=as.matrix(Z_hat_truncated)
+  }
   if(!is.null(Z_hat_untruncated))
   {
     Z_hat=as.matrix(Z_hat_untruncated)
