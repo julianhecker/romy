@@ -183,7 +183,7 @@ learner_y=lm_learner, prediction_y=lm_predict, method="double_cf", K=5, parallel
 			
 			
 			ctr=1
-			while(ctr<5)
+			while(ctr<3)
 			{
 			   fit=learner(out_train, X_train)
 			   out_train=out_train - prediction(fit, X_train)
