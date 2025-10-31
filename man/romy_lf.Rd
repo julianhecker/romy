@@ -4,16 +4,7 @@
 \alias{romy_lf}
 \title{ROMY-LF}
 \usage{
-romy_lf(
-  Y,
-  X,
-  inds_X,
-  epsilon = 0.01,
-  K_min = 1,
-  K_max = 5,
-  max_iter = 20,
-  eta = 0.5
-)
+romy_lf(Y, X, inds_X, epsilon = 0.01, K = 5, max_iter = 20, eta = 0.5)
 }
 \arguments{
 \item{Y}{A matrix containing the measurements for Y.}
@@ -24,9 +15,7 @@ romy_lf(
 
 \item{epsilon}{Convergence threshold, default value is 0.01.}
 
-\item{K_min}{Minimum number of latent factors, default value is 1.}
-
-\item{K_max}{Maximum number of latent factors, default value is 5.}
+\item{K}{Number of latent factors, default value is 5.}
 
 \item{max_iter}{Maximum number of iterations, default value is 20.}
 

@@ -12,7 +12,7 @@
   c_lambda,
   max_iter = 20,
   eta = 0.5,
-  K_max = 5
+  K = 5
 )
 }
 \arguments{
@@ -30,7 +30,7 @@
 
 \item{eta}{Eta parameter, default is value is 0.5.}
 
-\item{K_max}{Maximum number of latent factors, default value is 5.}
+\item{K}{Number of latent factors, default value is 5.}
 }
 \description{
 Performs the proximal gradient descent algorithm as described by Chen 2022 (Appendix B).

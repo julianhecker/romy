@@ -8,20 +8,20 @@
 #' @param X A matrix containing the measurements for X.
 #' @param inds_X List of indices for each column of Y that links covariates in X to the specific Y_m component.
 #' @param epsilon Convergence threshold, default value is 0.01.
-#' @param K_min Minimum number of latent factors, default value is 1.
-#' @param K_max Maximum number of latent factors, default value is 5.
+#' @param K Number of latent factors, default value is 5.
 #' @param max_iter Maximum number of iterations, default value is 20.
 #' @param eta Eta parameter, default is value is 0.5.
 #'
 #' @export
-romy_lf=function(Y, X, inds_X, epsilon=0.01, K_min=1, K_max=5, max_iter=20, eta=0.5)
+romy_lf=function(Y, X, inds_X, epsilon=0.01, K=5, max_iter=20, eta=0.5)
 {
   
   N=nrow(Y)
   M=ncol(Y)
+  
   results=list()
-  Z_hat_truncated=NULL
-  Z_hat_untruncated=NULL
+  Z_hat=NULL
+  
   
   num=20
   r <- (10 / 0.1)^(1/(num-1))
@@ -33,69 +33,22 @@ romy_lf=function(Y, X, inds_X, epsilon=0.01, K_min=1, K_max=5, max_iter=20, eta=
   
   for(c_lambda in seqs_scaling_dec)
   {
-		res=.romy_lf_algorithm_gamma(Y=Y, X=X, inds_X=inds_X, epsilon=epsilon, K_max=K_max, 
+		res=.romy_lf_algorithm_gamma(Y=Y, X=X, inds_X=inds_X, epsilon=epsilon, K=K, 
                           c_lambda=c_lambda, max_iter=max_iter, eta=eta)
 		
 		if(res$convergence & !res$all_zero)
 		{
-			K_ests=rep(0, length(seqs_scaling_inc))
-			ctr=1
-			for(c_delta in seqs_scaling_inc)
-			{
-				K_est=.estimate_K(res$ev_values, c_delta, N=N, M=M)
-				if(K_est>=K_min & K_est<=K_max)
-				{
-					Z_hat_untruncated=res$Z_hat[,1:K_est]
-				}
-				K_ests[ctr]=K_est; ctr=ctr+1
-			}
-			if(max(K_ests)<=K_min){
-				Z_hat_truncated=res$Z_hat[,1:K_min]
-			}
-			if(min(K_ests)>=K_max){
-				Z_hat_truncated=res$Z_hat[,1:K_max]
-			}
 			
+			Z_hat=res$Z_hat
 			convergence=TRUE
 			degenerated=FALSE
 		}
   }
-  Z_hat=0
-  if(!is.null(Z_hat_truncated))
-  {
-	Z_hat=as.matrix(Z_hat_truncated)
-  }
-  if(!is.null(Z_hat_untruncated))
-  {
-    Z_hat=as.matrix(Z_hat_untruncated)
-  }
-  K_hat=0
-  if(!is.null(Z_hat))
-  {
-	K_hat=ncol(Z_hat)
-  }
   
-  return(list(Z_hat=Z_hat, K_hat=K_hat, convergence=convergence, degenerated=degenerated))
+  
+  return(list(Z_hat=Z_hat, convergence=convergence, degenerated=degenerated))
 }
 
-#' Estimates K as described by Chen (2022).
-#'
-#' @param ev_values Eigenvalues from projected Gamma Matrix product
-#' @param c_delta Constant for Delta Computation
-#' @param N Sample Size
-#' @param M Number of Phenotypes
-#'
-.estimate_K=function(ev_values, c_delta, N, M)
-{
-	delta_NM=c_delta*(N+M)*log(N)
-	inds=1:N
-	K_hat=0
-	if(sum(ev_values>=delta_NM)>=1)
-	{
-		  K_hat=max(inds[ev_values>=delta_NM])
-	}
-	return(K_hat)
-}
 
 
 #' Performs the proximal gradient descent algorithm as described by Chen 2022 (Appendix B).
@@ -107,9 +60,9 @@ romy_lf=function(Y, X, inds_X, epsilon=0.01, K_min=1, K_max=5, max_iter=20, eta=
 #' @param c_lambda factor for Lambda.
 #' @param max_iter Maximum number of iterations, default value is 20.
 #' @param eta Eta parameter, default is value is 0.5.
-#' @param K_max Maximum number of latent factors, default value is 5.
+#' @param K Number of latent factors, default value is 5.
 #'
-.romy_lf_algorithm_gamma=function(Y, X, inds_X, epsilon, c_lambda, max_iter=20, eta=0.5, K_max=5)
+.romy_lf_algorithm_gamma=function(Y, X, inds_X, epsilon, c_lambda, max_iter=20, eta=0.5, K=5)
 {
   N=nrow(Y)
   M=ncol(Y)
@@ -222,7 +175,7 @@ romy_lf=function(Y, X, inds_X, epsilon=0.01, K_min=1, K_max=5, max_iter=20, eta=
 			M_GammaGamma_M=M_Gamma %*% t(M_Gamma)
 			evd=eigen(M_GammaGamma_M)
 			inds=1:N
-			Z_hat=evd$vectors[,1:K_max]*sqrt(N)
+			Z_hat=evd$vectors[,1:K]*sqrt(N)
 			ev_values=evd$values
 			all_zero=FALSE
 		}else{
